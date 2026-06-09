@@ -151,12 +151,12 @@ def define_analysis_period(new_date_start, new_date_end, station):
     """
     if new_date_start is not None:
         months_start = pd.date_range(new_date_start, new_date_end, freq="1MS")
-        months_end = pd.date_range(new_date_start, new_date_end, freq="1M")
+        months_end = pd.date_range(new_date_start, new_date_end, freq="1ME")
     else:
         date_start = station["date_start_1b"]
         date_end = round_to_last_complete_month()
         months_start = pd.date_range(date_start, date_end, freq="1MS")
-        months_end = pd.date_range(date_start, date_end, freq="1M")
+        months_end = pd.date_range(date_start, date_end, freq="1ME")
     return months_start, months_end
 
 
