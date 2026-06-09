@@ -1,0 +1,23 @@
+image: continuumio/miniconda3:23.5.2-0
+
+variables:
+  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
+
+cache:
+  - key:
+      files:
+        - requirements.txt
+    paths:
+      - .cache/conda/pkgs
+
+before_script:
+  - pip install -r requirements.txt
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - python -m pytest -s --cov
+  coverage: '/^TOTAL.+?(\d+\%)$/'

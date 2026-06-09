@@ -1,0 +1,10 @@
+# Main packages
+click
+numpy
+pandas
+
+# Development packages
+black
+flake8
+pytest
+pytest-cov
