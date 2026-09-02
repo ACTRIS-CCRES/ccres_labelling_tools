@@ -5,6 +5,7 @@ import requests
 from collections import Counter
 
 from analysis.utils import round_to_last_complete_month
+from analysis.plot import plot_data_coverage
 
 
 def define_request_and_call(product: str, station: dict):
@@ -182,7 +183,9 @@ def define_list_sites(new_sites, conf):
     return sites_to_analyzed
 
 
-def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
+def cloudnet(
+    new_sites, new_date_start, new_date_end, output_dir, makeplot, conf, params
+):
     """_summary_
 
     Parameters
@@ -195,6 +198,8 @@ def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
         _description_
     output_dir : _type_
         _description_
+    makeplot : bool
+        _description_
     conf : _type_
         _description_
     params : _type_
@@ -206,6 +211,7 @@ def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
 
     for site in sites_to_analyzed:
         station = conf.sites[site]  # get conf for a specific site
+        dfs_station = []
         #
         months_start, months_end = define_analysis_period(
             new_date_start, new_date_end, station
@@ -344,10 +350,21 @@ def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
             # print("\n\n")
             filename = (
                 output_dir
+                / site
                 / f"{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{site}_cloudnet_data_coverage.csv"
             )
+            filename.parent.mkdir(parents=True, exist_ok=True)
             # print("\t\t", filename, "saved")
             final_df.to_csv(filename, float_format="%.2f")
+            dfs_station.append(final_df)
+
+        # --------------------------------------
+        # Plot
+        # --------------------------------------
+        if makeplot:
+            df2plot = pd.concat(dfs_station).sort_index(ascending=True)
+            plot_data_coverage(station, df2plot, output_dir, params)
+            print("Plot saved")
 
 
 def process_data(

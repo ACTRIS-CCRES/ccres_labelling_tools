@@ -1,5 +1,5 @@
 """
-Test for Cloudnet Data Coverage script
+Test for Cloudnet data coverage script
 """
 
 from pathlib import Path
@@ -18,7 +18,7 @@ def test_cloudnet_data_coverage():
     # Build the command using Path and subprocess
     cmd_args = [
         sys.executable,  # Use the same Python interpreter as the test
-        str(EXE),  # Convert Path to str
+        str(EXE),  # Convert Path to str # python -m pytest
         "--site",
         "Bucharest",
         "--site",
@@ -30,6 +30,8 @@ def test_cloudnet_data_coverage():
         "20260531",
         "--output_dir",
         str(TEST_DIR),
+        "--makeplot",
+        "True",
     ]
 
     # Print command for debugging

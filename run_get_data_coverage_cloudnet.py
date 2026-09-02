@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from importlib.util import spec_from_file_location, module_from_spec
 
-from analysis import data_coverage
+from analysis import data_coverage, plot
 
 import click
 
@@ -39,7 +39,12 @@ __author__ = "jean-francois.ribaud@ipsl.fr"
     default=Path(__file__).parent / "outputs",
     help="output directory",
 )
-def main(site, date, output_dir):
+@click.option(
+    "--makeplot",
+    type=bool,
+    default=False,
+)
+def main(site, date, output_dir, makeplot):
     # 1 - Get conf & params
     # --------------------------------------------------
     conf_dir = Path(__file__).parent / "conf"
@@ -81,7 +86,7 @@ def main(site, date, output_dir):
     # 5 - main loop
     # --------------------------------------------------
     data_coverage.cloudnet(
-        sites, new_date_start, new_date_end, output_dir, conf, params
+        sites, new_date_start, new_date_end, output_dir, makeplot, conf, params
     )
 
 
