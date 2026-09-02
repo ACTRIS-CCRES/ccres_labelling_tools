@@ -5,6 +5,7 @@ import requests
 from collections import Counter
 
 from analysis.utils import round_to_last_complete_month
+from analysis.plot import plot_data_coverage
 
 
 def define_request_and_call(product: str, station: dict):
@@ -182,7 +183,9 @@ def define_list_sites(new_sites, conf):
     return sites_to_analyzed
 
 
-def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
+def cloudnet(
+    new_sites, new_date_start, new_date_end, output_dir, makeplot, conf, params
+):
     """_summary_
 
     Parameters
@@ -195,6 +198,8 @@ def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
         _description_
     output_dir : _type_
         _description_
+    makeplot : bool
+        _description_
     conf : _type_
         _description_
     params : _type_
@@ -206,148 +211,167 @@ def cloudnet(new_sites, new_date_start, new_date_end, output_dir, conf, params):
 
     for site in sites_to_analyzed:
         station = conf.sites[site]  # get conf for a specific site
-        #
-        months_start, months_end = define_analysis_period(
-            new_date_start, new_date_end, station
-        )
-        # Loop over whole period
-        # -------------------------------------
-        for month_start, month_end in zip(months_start, months_end):
-            print(site)
-            print(
-                "\tfrom",
-                month_start.strftime("%Y-%m-%d"),
-                "to",
-                month_end.strftime("%Y-%m-%d"),
-            )
-            dfs = []  # list df per product
-            perfect_month_dates = pd.date_range(month_start, month_end, freq="1D")
 
-            # Loop over products
+        # Do analysis per full year
+        year_start = new_date_start.replace(month=1, day=1)
+        year_end = new_date_end.replace(month=12, day=31)
+        years_start = pd.date_range(year_start, year_end, freq="1YS")
+        years_end = pd.date_range(year_start, year_end, freq="1YE")
+        for ys, ye in zip(years_start, years_end):
+            months_start, months_end = define_analysis_period(ys, ye, station)
+            dfs_station = []
+
+            # Loop over whole year
             # -------------------------------------
-            for product in params.all_products:
-                print("\t\t", product)
-                backup_data = None
+            for month_start, month_end in zip(months_start, months_end):
+                if (month_start < new_date_start) or (month_end > new_date_end):
+                    continue
+                print(site)
+                print(
+                    "\tfrom",
+                    month_start.strftime("%Y-%m-%d"),
+                    "to",
+                    month_end.strftime("%Y-%m-%d"),
+                )
+                dfs = []  # list df per product
+                perfect_month_dates = pd.date_range(month_start, month_end, freq="1D")
 
-                # ------------------------------------------------------
-                # request instrumental products - wit pid
-                # ------------------------------------------------------
-                if product in params.instrument_products:
-                    # 1 - get request & call for API
-                    # ---------------------------------------
-                    product_request, product_call = define_request_and_call(
-                        product, station
-                    )
-                    if station["nominal_instrument"][product_request]:
-                        # 2 - get relative PID
+                # Loop over products
+                # -------------------------------------
+                for product in params.all_products:
+                    print("\t\t", product)
+                    backup_data = None
+
+                    # ------------------------------------------------------
+                    # request instrumental products - wit pid
+                    # ------------------------------------------------------
+                    if product in params.instrument_products:
+                        # 1 - get request & call for API
                         # ---------------------------------------
-                        pid = get_pid(
-                            product_request,
-                            product_call,
-                            month_start,
-                            month_end,
-                            site,
-                            station,
-                            params,
+                        product_request, product_call = define_request_and_call(
+                            product, station
                         )
-
-                        # 3 - Do request
-                        # ---------------------------------------
-                        resp = requests.get(
-                            params.url_instrument.format(
-                                site=site,
-                                date_start=month_start.strftime("%Y-%m-%d"),
-                                date_end=month_end.strftime("%Y-%m-%d"),
-                                product=product_call,
-                                pid=pid,
+                        if station["nominal_instrument"][product_request]:
+                            # 2 - get relative PID
+                            # ---------------------------------------
+                            pid = get_pid(
+                                product_request,
+                                product_call,
+                                month_start,
+                                month_end,
+                                site,
+                                station,
+                                params,
                             )
-                        )
-                    # if instrument but any reason does not work
-                    # ----------------------------------------------------
-                    else:  # request as geophysical products -> without pid
+
+                            # 3 - Do request
+                            # ---------------------------------------
+                            resp = requests.get(
+                                params.url_instrument.format(
+                                    site=site,
+                                    date_start=month_start.strftime("%Y-%m-%d"),
+                                    date_end=month_end.strftime("%Y-%m-%d"),
+                                    product=product_call,
+                                    pid=pid,
+                                )
+                            )
+                        # if instrument but any reason does not work
+                        # ----------------------------------------------------
+                        else:  # request as geophysical products -> without pid
+                            resp = requests.get(
+                                params.url_geophysical.format(
+                                    site=site,
+                                    date_start=month_start.strftime("%Y-%m-%d"),
+                                    date_end=month_end.strftime("%Y-%m-%d"),
+                                    product=product_call,
+                                )
+                            )
+
+                        # 4 - Backup instrument (if any) request
+                        # ------------------------------------------
+                        if product_request in conf.sites[site]["additional_instrument"]:
+                            print("\t\t+1 backup", product_request)
+                            pid_backup = conf.sites[site]["additional_instrument"][
+                                product_request
+                            ]
+                            resp_backup = requests.get(
+                                params.url_instrument.format(
+                                    site=site,
+                                    date_start=month_start.strftime("%Y-%m-%d"),
+                                    date_end=month_end.strftime("%Y-%m-%d"),
+                                    product=product_call,
+                                    pid=pid_backup,
+                                )
+                            )
+                            backup_data = resp_backup.json()
+
+                    # ------------------------------------------------------
+                    # request geophysical products - without pid
+                    # ------------------------------------------------------
+                    elif product in params.geophysical_products:
+                        product_request = product
                         resp = requests.get(
                             params.url_geophysical.format(
                                 site=site,
                                 date_start=month_start.strftime("%Y-%m-%d"),
                                 date_end=month_end.strftime("%Y-%m-%d"),
-                                product=product_call,
+                                product=product,
                             )
                         )
+                    else:
+                        print("\t\t\t--> PROBLEM with", product)
+                        print("\t\t\t--> Please double check, something WRONG !")
 
-                    # 4 - Backup instrument (if any) request
-                    # ------------------------------------------
-                    if product_request in conf.sites[site]["additional_instrument"]:
-                        print("\t\t+1 backup", product_request)
-                        pid_backup = conf.sites[site]["additional_instrument"][
-                            product_request
-                        ]
-                        resp_backup = requests.get(
-                            params.url_instrument.format(
-                                site=site,
-                                date_start=month_start.strftime("%Y-%m-%d"),
-                                date_end=month_end.strftime("%Y-%m-%d"),
-                                product=product_call,
-                                pid=pid_backup,
-                            )
-                        )
-                        backup_data = resp_backup.json()
-
-                # ------------------------------------------------------
-                # request geophysical products - without pid
-                # ------------------------------------------------------
-                elif product in params.geophysical_products:
-                    product_request = product
-                    resp = requests.get(
-                        params.url_geophysical.format(
-                            site=site,
-                            date_start=month_start.strftime("%Y-%m-%d"),
-                            date_end=month_end.strftime("%Y-%m-%d"),
-                            product=product,
-                        )
-                    )
-                else:
-                    print("\t\t\t--> PROBLEM with", product)
-                    print("\t\t\t--> Please double check, something WRONG !")
-
-                # --------------------------------------
-                # Analyze resp json
-                # --------------------------------------
-                prod_data = resp.json()
-                df = process_data(
-                    prod_data,
-                    product,
-                    perfect_month_dates,
-                    conf.sites,
-                    site,
-                    product_request,
-                )
-                dfs.append(df)
-
-                if backup_data is not None:
-                    backup_df = process_data(
-                        backup_data,
+                    # --------------------------------------
+                    # Analyze resp json
+                    # --------------------------------------
+                    prod_data = resp.json()
+                    df = process_data(
+                        prod_data,
                         product,
                         perfect_month_dates,
                         conf.sites,
                         site,
                         product_request,
-                        is_backup=True,
                     )
-                    dfs.append(backup_df)
+                    dfs.append(df)
+
+                    if backup_data is not None:
+                        backup_df = process_data(
+                            backup_data,
+                            product,
+                            perfect_month_dates,
+                            conf.sites,
+                            site,
+                            product_request,
+                            is_backup=True,
+                        )
+                        dfs.append(backup_df)
+
+                # --------------------------------------
+                # Get final df & save
+                # --------------------------------------
+                final_df = pd.concat(dfs, axis=1)
+                final_df.index.name = "dates"
+                # print(final_df)
+                # print("\n\n")
+                filename = (
+                    output_dir
+                    / site
+                    / f"{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{site}_cloudnet_data_coverage.csv"
+                )
+                filename.parent.mkdir(parents=True, exist_ok=True)
+                # print("\t\t", filename, "saved")
+                final_df.to_csv(filename, float_format="%.2f")
+                dfs_station.append(final_df)
 
             # --------------------------------------
-            # Get final df & save
+            # Plot
             # --------------------------------------
-            final_df = pd.concat(dfs, axis=1)
-            final_df.index.name = "dates"
-            # print(final_df)
-            # print("\n\n")
-            filename = (
-                output_dir
-                / f"{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{site}_cloudnet_data_coverage.csv"
-            )
-            # print("\t\t", filename, "saved")
-            final_df.to_csv(filename, float_format="%.2f")
+            if makeplot:
+                df2plot = pd.concat(dfs_station).sort_index(ascending=True)
+                plot_data_coverage(station, df2plot, months_start, output_dir, params)
+                print("Plot saved")
 
 
 def process_data(

@@ -2,6 +2,7 @@
 click
 numpy
 pandas
+matplotlib
 
 # Development packages
 black
