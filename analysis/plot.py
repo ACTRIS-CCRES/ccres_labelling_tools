@@ -7,7 +7,7 @@ from matplotlib.dates import DateFormatter, MonthLocator
 from analysis.utils import check_vars_in_df, add_logo, extract_short_pid
 
 
-def plot_data_coverage(site, df, output_dir, params):
+def plot_data_coverage(site, df, months_start, output_dir, params):
     """_summary_
 
     Parameters
@@ -16,14 +16,24 @@ def plot_data_coverage(site, df, output_dir, params):
         _description_
     df : _type_
         _description_
+    months_start : _type_
+        _description_
     output_dir : _type_
         _description_
     params : _type_
         _description_
     """
-    print(site)
+    # get monthly mean
     df = df.fillna(0).resample("1MS").mean()
     df = df.dropna(axis=1, how="all")
+
+    # get date of analysis for plotting
+    date_start_analysis = df.index[0]
+    date_end_analysis = df.index[-1]
+
+    # Annual reindexing on monthly basis
+    df = df.reindex(months_start)
+
     df = check_vars_in_df(df, params.all_products)
     df = df.rename(columns={"radar_backup": "radar"})
 
@@ -119,13 +129,13 @@ def plot_data_coverage(site, df, output_dir, params):
         ax.xaxis.set_minor_locator(MonthLocator())
     plt.tight_layout()
     fig.suptitle(
-        f"{site['station'].capitalize()} ({site['lat']}°N, {site['lon']}°E, {site['alt']}m)\nCloudnet Data Availability\nFrom {df.index[0].strftime('%b-%Y')} to {df.index[-1].strftime('%b-%Y')}",
+        f"{site['station'].capitalize()} ({site['lat']}°N, {site['lon']}°E, {site['alt']}m)\nCloudnet Data Availability\n{date_start_analysis.strftime('%b')}-{date_end_analysis.strftime('%b %Y')} analysis",
         fontsize=params.tsize,
     )
     add_logo(left=0.78, bottom=0.885, width=0.2, height=0.1)
     plt.subplots_adjust(top=0.86)
 
-    filename = f"{site['station'].lower()}_{df.index[0].strftime('%Y%m%d')}_{df.index[-1].strftime('%Y%m%d')}_cloudnet_data_availability.png"
+    filename = f"{site['station'].lower()}_{date_start_analysis.strftime('%Y%m%d')}_{date_end_analysis.strftime('%Y%m%d')}_cloudnet_data_availability.png"
     output_filename = output_dir / site["station"].lower() / filename
     output_filename.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_filename)

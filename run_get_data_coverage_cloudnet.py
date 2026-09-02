@@ -75,6 +75,7 @@ def main(site, date, output_dir, makeplot):
         sites = [s for s in sites if s in conf.sites]
     else:
         sites = None
+        return 0
 
     # 4 - get dates
     # --------------------------------------------------
@@ -82,12 +83,14 @@ def main(site, date, output_dir, makeplot):
         new_date_start, new_date_end = date
     else:
         new_date_start, new_date_end = None, None
+        return 0
 
     # 5 - main loop
     # --------------------------------------------------
     data_coverage.cloudnet(
         sites, new_date_start, new_date_end, output_dir, makeplot, conf, params
     )
+    return 0
 
 
 if __name__ == "__main__":
