@@ -76,7 +76,7 @@ def main(site, date, output_dir, makeplot):
     else:
         sites = None
 
-    # 4 - get dates (if any)
+    # 4 - get dates
     # --------------------------------------------------
     if date:
         new_date_start, new_date_end = date
