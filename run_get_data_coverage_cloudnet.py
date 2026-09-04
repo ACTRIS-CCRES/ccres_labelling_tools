@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from importlib.util import spec_from_file_location, module_from_spec
 
-from analysis import data_coverage, plot
+from analysis import data_coverage
 
 import click
 
