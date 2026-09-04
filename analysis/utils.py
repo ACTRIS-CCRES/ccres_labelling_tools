@@ -87,7 +87,7 @@ def add_logo(
     plt.axis("off")
 
     try:
-        logo = plt.imread(f"assets/{logo_name}")
+        logo = plt.imread(f"assets/logo/{logo_name}")
         plt.imshow(logo, origin="upper")
     except IOError:
         print("PLOT: Impossible to include the logo")
