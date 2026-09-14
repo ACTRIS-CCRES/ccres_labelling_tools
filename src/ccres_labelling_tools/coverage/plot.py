@@ -1,13 +1,28 @@
-import pandas as pd
+"""Function to plot coverage of data availability for different products."""
+
+from pathlib import Path
+from types import ModuleType
+
 import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.dates import DateFormatter, MonthLocator
 from matplotlib.patches import Patch
 from matplotlib.ticker import MultipleLocator
-from matplotlib.dates import DateFormatter, MonthLocator
 
-from analysis.utils import check_vars_in_df, add_logo, extract_short_pid
+from ccres_labelling_tools.coverage.utils import (
+    add_logo,
+    check_vars_in_df,
+    extract_short_pid,
+)
 
 
-def plot_data_coverage(site, df, months_start, output_dir, params):
+def plot_data_coverage(
+    site: str,
+    df: pd.DataFrame,
+    months_start: int,
+    output_dir: Path,
+    params: ModuleType,
+) -> None:
     """_summary_
 
     Parameters
@@ -74,12 +89,12 @@ def plot_data_coverage(site, df, months_start, output_dir, params):
             else:
                 short_pid = extract_short_pid(site["nominal_instrument"][product_pid])
             axes[n].set_title(
-                f"{params.products_to_plot[n].capitalize()} availability (pid:{short_pid} [{df[product].mean():.0f}%])",
+                f"{params.products_to_plot[n].capitalize()} availability (pid:{short_pid} [{df[product].mean():.0f}%])",  # noqa:E501
                 fontsize=params.asize,
             )
         else:
             axes[n].set_title(
-                f"{params.products_to_plot[n].capitalize()} availability [{df[product].mean():.0f}%]",
+                f"{params.products_to_plot[n].capitalize()} availability [{df[product].mean():.0f}%]",  # noqa:E501
                 fontsize=params.asize,
             )
 
@@ -113,7 +128,7 @@ def plot_data_coverage(site, df, months_start, output_dir, params):
                 fontsize=params.lsize,
                 bbox_to_anchor=(-0.08, 1.75),
             )
-        if i not in [6]:
+        if i not in [6]:  # noqa: FURB171
             ax.tick_params(labelbottom=False)
         else:
             ax.xaxis.set_major_formatter(DateFormatter("%b"))
@@ -129,16 +144,15 @@ def plot_data_coverage(site, df, months_start, output_dir, params):
         ax.xaxis.set_minor_locator(MonthLocator())
     plt.tight_layout()
     fig.suptitle(
-        f"{site['station'].capitalize()} ({site['lat']}°N, {site['lon']}°E, {site['alt']}m)\nCloudnet Data Availability\n{date_start_analysis.strftime('%b')}-{date_end_analysis.strftime('%b %Y')} analysis",
+        f"{site['station'].capitalize()} ({site['lat']}°N, {site['lon']}°E, {site['alt']}m)\nCloudnet Data Availability\n{date_start_analysis.strftime('%b')}-{date_end_analysis.strftime('%b %Y')} analysis",  # noqa: E501
         fontsize=params.tsize,
     )
     add_logo(left=0.78, bottom=0.885, width=0.2, height=0.1)
     plt.subplots_adjust(top=0.86)
 
-    filename = f"{site['station'].lower()}_{date_start_analysis.strftime('%Y%m%d')}_{date_end_analysis.strftime('%Y%m%d')}_cloudnet_data_availability.png"
+    filename = f"{site['station'].lower()}_{date_start_analysis.strftime('%Y%m%d')}_{date_end_analysis.strftime('%Y%m%d')}_cloudnet_data_availability.png"  # noqa: E501
     output_filename = output_dir / site["station"].lower() / filename
     output_filename.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_filename)
 
-    # plt.show()
     plt.close()

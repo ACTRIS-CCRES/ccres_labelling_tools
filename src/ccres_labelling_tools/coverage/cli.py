@@ -1,26 +1,26 @@
-"""
-script to get daily data coverage info associated to Cloudnet's products
-for different National Facilities on a monthly time basis
+#!/usr/bin/env python
+"""Script to get daily data coverage from to Cloudnet's products.
+
+Can for different National Facilities on a monthly time basis
 """
 
-from pathlib import Path
+import datetime as dt
 import sys
-from importlib.util import spec_from_file_location, module_from_spec
-
-from analysis import data_coverage
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 
 import click
 
-__version__ = "0.0.1"
-__author__ = "jean-francois.ribaud@ipsl.fr"
+from ccres_labelling_tools.coverage import data_coverage
 
-# TODO: add logger
+__author__ = "jean-francois.ribaud@ipsl.fr"
 
 
 @click.command()
 @click.option(
     "--site",
     type=str,
+    required=True,
     multiple=True,
     help="List of sites (e.g., --site bucharest --site palaiseau --site munich)",
 )
@@ -30,13 +30,44 @@ __author__ = "jean-francois.ribaud@ipsl.fr"
         click.DateTime(formats=["%Y%m%d", "%Y-%m-%d"]),
         click.DateTime(formats=["%Y%m%d", "%Y-%m-%d"]),
     ),
+    required=True,
     nargs=2,
     help="Date start and date end (e.g., --date 20260101 20261231)",
 )
 @click.option(
+    "--conf-nfs",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        path_type=Path,
+    ),
+    required=True,
+    help="Path to the configuration file for the national facility",
+)
+@click.option(
+    "--conf-params",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        path_type=Path,
+    ),
+    required=True,
+    help="Path to the configuration file for the parameters",
+)
+@click.option(
     "--output_dir",
     "-o",
-    default=Path(__file__).parent / "outputs",
+    type=click.Path(
+        file_okay=False,
+        dir_okay=True,
+        writable=True,
+        path_type=Path,
+    ),
+    required=True,
     help="output directory",
 )
 @click.option(
@@ -44,17 +75,22 @@ __author__ = "jean-francois.ribaud@ipsl.fr"
     type=bool,
     default=False,
 )
-def main(site, date, output_dir, makeplot):
+def main(
+    site: str,
+    date: dt.datetime,
+    conf_nfs: Path,
+    conf_params: Path,
+    output_dir: Path,
+    makeplot: bool = False,  # noqa: FBT001 FBT002
+) -> int:
+    """Calculate the data coverage for the given sites and date range, and optionally generate plots."""  # noqa: E501
     # 1 - Get conf & params
     # --------------------------------------------------
-    conf_dir = Path(__file__).parent / "conf"
-    conf_path = conf_dir / "conf_nf_ccres.py"
-    conf_spec = spec_from_file_location("conf", conf_path)
+    conf_spec = spec_from_file_location("conf", conf_nfs)
     conf = module_from_spec(conf_spec)
     conf_spec.loader.exec_module(conf)
 
-    params_path = conf_dir / "params.py"
-    params_spec = spec_from_file_location("params", params_path)
+    params_spec = spec_from_file_location("params", conf_params)
     params = module_from_spec(params_spec)
     params_spec.loader.exec_module(params)
 

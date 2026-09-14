@@ -28,23 +28,23 @@ favicon = "/assets/icons/IPSL.ico"
 logo = "/assets/logos/ESPRI_logo2021.webp"
 
 features = [
-    #"navigation.tabs",        # Display the top-level navigation as horizontal tabs.
-    #"navigation.tabs.sticky", # Keep the navigation tabs visible at the top while scrolling.
-    "navigation.footer",      # Add previous/next page links in the footer
-    "navigation.top",         # Add a back-to-top button
-    "navigation.tracking",    # Update the URL with the active section anchor
-    "navigation.indexes",     # Use index pages as section landing pages
-    #"navigation.sections",    # Display first-level navigation as non-collapsible sidebar sections
-    #"navigation.expand",      # Automatically expand all collapsible navigation sections.
+  #"navigation.tabs",        # Display the top-level navigation as horizontal tabs.
+  #"navigation.tabs.sticky", # Keep the navigation tabs visible at the top while scrolling.
+  "navigation.footer",   # Add previous/next page links in the footer
+  "navigation.top",      # Add a back-to-top button
+  "navigation.tracking", # Update the URL with the active section anchor
+  "navigation.indexes",  # Use index pages as section landing pages
+  #"navigation.sections",    # Display first-level navigation as non-collapsible sidebar sections
+  #"navigation.expand",      # Automatically expand all collapsible navigation sections.
 
 
-    "search.highlight",       # Highlight search terms on the target page
-    "search.suggest",         # Show search suggestions while typing
+  "search.highlight", # Highlight search terms on the target page
+  "search.suggest",   # Show search suggestions while typing
 
-    "content.code.copy",      # Add a copy button to code blocks
-    "announce.dismiss",       # Allow users to dismiss the announcement banner
-    #"content.action.edit",    # Add an "Edit this page" action
-    #"content.action.view",    # Add a "View source" action
+  "content.code.copy", # Add a copy button to code blocks
+  "announce.dismiss",  # Allow users to dismiss the announcement banner
+  #"content.action.edit",    # Add an "Edit this page" action
+  #"content.action.view",    # Add a "View source" action
 ]
 
 [project.theme.icon]
@@ -53,7 +53,7 @@ repo = "fontawesome/brands/gitlab"
 [project.theme.icon.admonition]
 note = "lucide/paperclip"
 info = "fontawesome/solid/circle-info"
-example = "lucide/list"  # "octicons/beaker-16"
+example = "lucide/list"                # "octicons/beaker-16"
 abstract = "fontawesome/solid/book"
 tip = "fontawesome/solid/lightbulb"
 success = "lucide/check"
@@ -142,5 +142,5 @@ options.custom_icons = ["overrides/.icons"]
 
 # Allows including external Markdown snippets
 [project.markdown_extensions.pymdownx.snippets]
-base_path = ["docs"]      # Directories where snippets are searched
-check_paths = true        # Fails the build if an included snippet cannot be found
+base_path = ["docs"] # Directories where snippets are searched
+check_paths = true   # Fails the build if an included snippet cannot be found

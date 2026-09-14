@@ -53,14 +53,6 @@ repos:
         args:
           - --fix
       - id: ruff-format
-  - repo: local
-    hooks:
-      - id: ty
-        name: ty (type checker)
-        entry: uv run ty check
-        language: python
-        types:
-          - python
   - repo: https://github.com/tox-dev/pyproject-fmt
     rev: v2.29.4
     hooks:

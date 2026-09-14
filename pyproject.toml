@@ -70,16 +70,23 @@ lint.ignore = [
 "tests/**" = [
   "ANN",     # Type annotations are optional in tests.
   "ARG",     # Allow unused arguments in fixtures and mocks.
+  "D103",
+  "INP001",
   "PLR2004", # Allow magic values in test assertions.
   "S101",    # Allow assert statements.
 ]
+
+"conf/**/*.py" = [ "D100", "INP001" ]
 
 [tool.pytest]
 ini_options.testpaths = [ "tests" ]
 ini_options.addopts = """\
   --cov=. --cov-config=pyproject.toml -vv --cov-report=html:htmlcov --cov-report=xml:coverage.xml --cov-report term\
   """
-ini_options.filterwarnings = [ "ignore::RuntimeWarning", "ignore::DeprecationWarning" ]
+ini_options.filterwarnings = [
+  "ignore::RuntimeWarning",
+  "ignore::DeprecationWarning",
+]
 
 [tool.coverage]
 run.source = [ "src/", "tests/" ]
