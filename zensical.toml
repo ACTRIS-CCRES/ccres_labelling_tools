@@ -1,0 +1,146 @@
+[project]
+site_name = "CCRES labelling tools"
+site_description = "A ACTRIS-CCRES package containing tools used to label nNational Facilities"
+
+# Automatically calculated
+site_url = "__SITE_URL__"
+repo_url = "__REPO_URL__"
+
+docs_dir = "docs"
+site_dir = "public"
+
+extra_css = ["assets/css/extra.css"]
+
+
+nav = [
+  { "Home" = "index.md" },
+  { "Installation" = "installation.md" },
+  { "Usage" = "usage.md" },
+  { "API Reference" = "api.md" },
+]
+
+[project.theme]
+custom_dir = "overrides"
+variant = "modern"
+language = "en"
+
+favicon = "/assets/icons/IPSL.ico"
+logo = "/assets/logos/ESPRI_logo2021.webp"
+
+features = [
+    #"navigation.tabs",        # Display the top-level navigation as horizontal tabs.
+    #"navigation.tabs.sticky", # Keep the navigation tabs visible at the top while scrolling.
+    "navigation.footer",      # Add previous/next page links in the footer
+    "navigation.top",         # Add a back-to-top button
+    "navigation.tracking",    # Update the URL with the active section anchor
+    "navigation.indexes",     # Use index pages as section landing pages
+    #"navigation.sections",    # Display first-level navigation as non-collapsible sidebar sections
+    #"navigation.expand",      # Automatically expand all collapsible navigation sections.
+
+
+    "search.highlight",       # Highlight search terms on the target page
+    "search.suggest",         # Show search suggestions while typing
+
+    "content.code.copy",      # Add a copy button to code blocks
+    "announce.dismiss",       # Allow users to dismiss the announcement banner
+    #"content.action.edit",    # Add an "Edit this page" action
+    #"content.action.view",    # Add a "View source" action
+]
+
+[project.theme.icon]
+repo = "fontawesome/brands/gitlab"
+
+[project.theme.icon.admonition]
+note = "lucide/paperclip"
+info = "fontawesome/solid/circle-info"
+example = "lucide/list"  # "octicons/beaker-16"
+abstract = "fontawesome/solid/book"
+tip = "fontawesome/solid/lightbulb"
+success = "lucide/check"
+question = "octicons/question-16"
+warning = "octicons/alert-16"
+failure = "octicons/x-circle-16"
+danger = "fontawesome/solid/ban"
+bug = "octicons/bug-16"
+quote = "lucide/message-square-quote"
+
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "blue"
+accent = "blue"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "blue"
+accent = "blue"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+# -----------------------------------------------------------------------------
+# Plugins
+# -----------------------------------------------------------------------------
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "numpy"
+inherited_members = true
+show_source = false
+#show_root_heading = true
+#show_root_full_path = false
+#heading_level = 3
+
+# -----------------------------------------------------------------------------
+# Markdown extensions
+# -----------------------------------------------------------------------------
+
+# Admonitions (notes, warnings, tips, etc.)
+[project.markdown_extensions.admonition]
+
+# Makes admonitions collapsible (??? note, ???+ info, ...)
+[project.markdown_extensions.pymdownx.details]
+
+# Advanced fenced code blocks (nested blocks, Mermaid, tabs, etc.)
+[project.markdown_extensions.pymdownx.superfences]
+
+# Adds HTML attributes (classes, IDs, styles...) to Markdown elements
+[project.markdown_extensions.attr_list]
+
+# Allows Markdown syntax inside HTML blocks
+[project.markdown_extensions.md_in_html]
+
+# Automatically generates a table of contents from headings
+[project.markdown_extensions.toc]
+# Adds a clickable permalink icon next to each heading
+permalink = true
+
+# Automatically converts URLs, GitHub issues, commits, etc. into links
+[project.markdown_extensions.pymdownx.magiclink]
+
+# Adds captions to code blocks, images and other supported elements
+[project.markdown_extensions.pymdownx.blocks.caption]
+
+# GitHub-style task lists (- [ ] and - [x])
+[project.markdown_extensions.pymdownx.tasklist]
+# Uses Material's custom checkboxes
+custom_checkbox = true
+
+# Twemoji support with SVG rendering and custom icons
+[project.markdown_extensions.pymdownx.emoji]
+emoji_index = "zensical.extensions.emoji.twemoji"
+emoji_generator = "zensical.extensions.emoji.to_svg"
+# Directory containing additional custom SVG icons
+options.custom_icons = ["overrides/.icons"]
+
+# Allows including external Markdown snippets
+[project.markdown_extensions.pymdownx.snippets]
+base_path = ["docs"]      # Directories where snippets are searched
+check_paths = true        # Fails the build if an included snippet cannot be found

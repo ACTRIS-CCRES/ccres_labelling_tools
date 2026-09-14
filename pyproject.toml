@@ -1,0 +1,106 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ccres-labelling-tools"
+version = "0.0.1"
+description = "A ACTRIS-CCRES package containing tools used to label nNational Facilities"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Jean-Francois Ribaud", email = "jean-francois.ribaud@ipsl.fr" }
+]
+maintainers = [
+    { name = "Jean-Francois Ribaud", email = "jean-francois.ribaud@ipsl.fr" }
+]
+license = "AGPL-3.0"
+dependencies = [
+    "click>=8.5.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "pandas>=3.0.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ccres_labelling_tools"]
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.13.8",
+    "pre-commit>=4.5.1",
+    "pyproject-fmt>=2.29.4",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.15.2",
+    "ty>=0.0.16",
+]
+docs = [
+    "zensical",
+    "mkdocstrings-python",
+]
+
+[tool.ruff]
+line-length = 88
+# 88 is the standard line length
+lint.select = ["ALL"]
+lint.ignore = [
+    "B008",    # Typer's Option() and Argument() are intentionally used as default values.
+    "COM812",  # Conflicts with the formatter.
+    "CPY001",  # Do not require copyright notices.
+    "D105",    # Allow missing magic method docstrings.
+    "D106",    # Allow missing nested class docstrings.
+    "D203",    # Incompatible with D211.
+    "D213",    # Incompatible with D212.
+    "D4",      # Ignore docstring content and style conventions.
+    "FIX002",  # Allow TODO comments.
+    "LOG015",  # Allow calls to the root logger.
+    "PLR",     # Ignore design-related recommendations (e.g. too many arguments).
+    "T20",     # Allow print statements.
+    "TD002",   # Do not require TODO author attribution.
+    "TD003",   # Do not require TODO issue links.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "ANN",     # Type annotations are optional in tests.
+    "ARG",     # Allow unused arguments in fixtures and mocks.
+    "PLR2004", # Allow magic values in test assertions.
+    "S101",    # Allow assert statements.
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=. --cov-config=pyproject.toml -vv --cov-report=html:htmlcov --cov-report=xml:coverage.xml --cov-report term"
+testpaths = ["tests"]
+filterwarnings = ["ignore::RuntimeWarning", "ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = ["src/", "tests/"]
+omit = ["*.pyx"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@overload",
+    "@typing.overload",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]
+[tool.commitizen]
+version_provider = "uv"
+tag_format = "v$version"
+annotated_tag = true
+annotated_tag_message = "Release $new_version"
+changelog_file = "CHANGELOG.md"
+update_changelog_on_bump = true
+bump_message = "chore: bump version $current_version → $new_version"
+pre_bump_hooks = []
+post_bump_hooks = []
+retry_after_failure = true
