@@ -1,23 +1,43 @@
-image: continuumio/miniconda3:23.5.2-0
+default:
+  tags:
+    - IPSL
+    - docker
 
-variables:
-  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
+# included templates
+include:
+  # Gitleaks template
+  - component: "$CI_SERVER_FQDN/ipsl/espri/ci-catalogs/to-be-continuous/gitleaks/gitlab-ci-gitleaks@2"
+  # Python template
+  - component: "$CI_SERVER_FQDN/ipsl/espri/ci-catalogs/to-be-continuous/python/gitlab-ci-python@9"
+    inputs:
+      package-enabled: true
+      publish-enabled: true
+      pytest-enabled: true
+      ruff-enabled: true
+      ruff-format-enabled: true
+      ty-enabled: true
 
-cache:
-  - key:
-      files:
-        - requirements.txt
-    paths:
-      - .cache/conda/pkgs
-
-before_script:
-  - pip install -r requirements.txt
-
-stages:
-  - test
-
-test:
-  stage: test
+pages:
+  stage: production
+  dependencies: []
+  variables:
+    PYTHON_VERSION: "3.13"
+    BASE_LAYER: trixie-slim
+    # GitLab CI creates a separate mountpoint for the build directory,
+    # so we need to copy instead of using hard links.
+    UV_LINK_MODE: copy
+  image: ghcr.io/astral-sh/uv:python$PYTHON_VERSION-$BASE_LAYER
   script:
-    - python -m pytest -s --cov
-  coverage: '/^TOTAL.+?(\d+\%)$/'
+    - uv sync --group=docs
+    - |
+      sed -i \
+        -e "s|__SITE_URL__|${CI_PAGES_URL}|g" \
+        -e "s|__REPO_URL__|${CI_PROJECT_URL}|g" \
+        zensical.toml
+    - uv run zensical build --clean
+  artifacts:
+    expire_in: 2 weeks
+  pages:
+    publish: public
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
