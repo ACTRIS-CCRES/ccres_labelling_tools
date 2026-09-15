@@ -1,0 +1,64 @@
+exclude: "devcontainer.json"
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude: "LICENSE|CHANGELOG.md"
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: mixed-line-ending
+        args:
+          - --fix=lf
+      - id: no-commit-to-branch
+        args:
+          - --branch=main
+      - id: trailing-whitespace
+      - id: detect-private-key
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.18.1
+    hooks:
+      - id: commitizen
+        stages:
+          - commit-msg
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.15.1
+    hooks:
+      - id: hadolint
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.40
+    hooks:
+      - id: pymarkdown
+        args:
+          - -d
+          - MD013
+          - fix
+        exclude: "LICENSE|CHANGELOG.md"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.7
+    hooks:
+      - id: ruff-check
+        args:
+          - --fix
+      - id: ruff-format
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: v2.29.4
+    hooks:
+      - id: pyproject-fmt
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+        exclude: "pyproject.toml"

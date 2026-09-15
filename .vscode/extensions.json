@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "astral-sh.ty",
+        "bierner.markdown-mermaid",
+        "charliemarsh.ruff",
+        "davidanson.vscode-markdownlint",
+        "ms-python.debugpy",
+        "ms-python.python",
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one",
+        "zensical.zensical-studio"
+    ]
+}

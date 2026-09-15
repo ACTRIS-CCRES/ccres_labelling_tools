@@ -1,14 +1,18 @@
+"""Process Coverage data."""
+
+from collections import Counter
+from pathlib import Path
+from types import ModuleType
+
 import numpy as np
 import pandas as pd
 import requests
 
-from collections import Counter
-
-from analysis.utils import round_to_last_complete_month
-from analysis.plot import plot_data_coverage
+from ccres_labelling_tools.coverage.plot import plot_data_coverage
+from ccres_labelling_tools.coverage.utils import round_to_last_complete_month
 
 
-def define_request_and_call(product: str, station: dict):
+def define_request_and_call(product: str, station: dict) -> tuple[str, str]:
     """_summary_
 
     Parameters
@@ -34,21 +38,28 @@ def define_request_and_call(product: str, station: dict):
     ):
         product_request = "mwr"
         product_call = "mwr-l1c"  # use weather station from mwr hatpro
-    # elif product in ["doppler-lidar", "doppler-lidar-wind"]:
-    #     product_request = "doppler-lidar"
-    #     product_call = product
+    # elif product in ["doppler-lidar", "doppler-lidar-wind"]:  # noqa: ERA001
+    #     product_request = "doppler-lidar"  # noqa: ERA001
+    #     product_call = product  # noqa: ERA001
     else:
         product_request = product
         product_call = product
     return product_request, product_call
 
 
-def get_most_present_pid(site, month_start, month_end, product_call, pids, params):
+def get_most_present_pid(
+    site: str,
+    month_start: pd.Timestamp,
+    month_end: pd.Timestamp,
+    product_call: str,
+    pids: pd.DataFrame,
+    params: ModuleType,
+) -> str | None:
     """Return the PID that yields the most valid results from the instrument API."""
     pid_counts = Counter()
 
     for pid in pids.values():
-        resp = requests.get(
+        resp = requests.get(  # noqa : S113
             params.url_instrument.format(
                 site=site,
                 date_start=month_start.strftime("%Y-%m-%d"),
@@ -66,12 +77,7 @@ def get_most_present_pid(site, month_start, month_end, product_call, pids, param
                     pid_counts[pid_found] += 1
 
     # Choose the PID with the highest count
-    if pid_counts:
-        best_pid = pid_counts.most_common(1)[0][0]
-    else:
-        best_pid = None
-
-    return best_pid  # dict(pid_counts)
+    return pid_counts.most_common(1)[0][0] if pid_counts else None
 
 
 def get_pid(
@@ -81,8 +87,8 @@ def get_pid(
     month_end: pd.Timestamp,
     site: str,
     station: dict,
-    params,
-):
+    params: ModuleType,
+) -> str:
     """_summary_
 
     Parameters
@@ -113,12 +119,6 @@ def get_pid(
         station["nominal_instrument"][product_request],
         dict,
     ):
-        # print(
-        #     month_start,
-        #     month_end,
-        #     product_call,
-        #     station["nominal_instrument"][product_request],
-        # )
         pid = get_most_present_pid(
             site,
             month_start,
@@ -127,13 +127,16 @@ def get_pid(
             station["nominal_instrument"][product_request],
             params,
         )  # TODO: crappy: find better solution
-        # print("\t\t\tmost frequent pid", pid)
     else:
         pid = station["nominal_instrument"][product_request]
     return pid
 
 
-def define_analysis_period(new_date_start, new_date_end, station):
+def define_analysis_period(
+    new_date_start: pd.Timestamp | None,
+    new_date_end: pd.Timestamp,
+    station: dict,
+) -> tuple[pd.DatetimeIndex, pd.DatetimeIndex]:
     """_summary_
 
     Parameters
@@ -161,7 +164,7 @@ def define_analysis_period(new_date_start, new_date_end, station):
     return months_start, months_end
 
 
-def define_list_sites(new_sites, conf):
+def define_list_sites(new_sites: str | None, conf: ModuleType) -> str:
     """_summary_
 
     Parameters
@@ -176,16 +179,18 @@ def define_list_sites(new_sites, conf):
     _type_
         _description_
     """
-    if new_sites is not None:
-        sites_to_analyzed = new_sites
-    else:
-        sites_to_analyzed = conf.sites.keys()
-    return sites_to_analyzed
+    return new_sites if new_sites is not None else conf.sites.keys()
 
 
-def cloudnet(
-    new_sites, new_date_start, new_date_end, output_dir, makeplot, conf, params
-):
+def cloudnet(  # noqa:C901
+    new_sites: list[str],
+    new_date_start: pd.Timestamp,
+    new_date_end: pd.Timestamp,
+    output_dir: Path,
+    makeplot: bool,  # noqa: FBT001
+    conf: ModuleType,
+    params: ModuleType,
+) -> None:
     """_summary_
 
     Parameters
@@ -217,13 +222,13 @@ def cloudnet(
         year_end = new_date_end.replace(month=12, day=31)
         years_start = pd.date_range(year_start, year_end, freq="1YS")
         years_end = pd.date_range(year_start, year_end, freq="1YE")
-        for ys, ye in zip(years_start, years_end):
+        for ys, ye in zip(years_start, years_end):  # noqa: B905
             months_start, months_end = define_analysis_period(ys, ye, station)
             dfs_station = []
 
             # Loop over whole year
             # -------------------------------------
-            for month_start, month_end in zip(months_start, months_end):
+            for month_start, month_end in zip(months_start, months_end):  # noqa: B905
                 if (month_start < new_date_start) or (month_end > new_date_end):
                     continue
                 print(site)
@@ -266,7 +271,7 @@ def cloudnet(
 
                             # 3 - Do request
                             # ---------------------------------------
-                            resp = requests.get(
+                            resp = requests.get(  # noqa: S113
                                 params.url_instrument.format(
                                     site=site,
                                     date_start=month_start.strftime("%Y-%m-%d"),
@@ -278,7 +283,7 @@ def cloudnet(
                         # if instrument but any reason does not work
                         # ----------------------------------------------------
                         else:  # request as geophysical products -> without pid
-                            resp = requests.get(
+                            resp = requests.get(  # noqa: S113
                                 params.url_geophysical.format(
                                     site=site,
                                     date_start=month_start.strftime("%Y-%m-%d"),
@@ -294,7 +299,7 @@ def cloudnet(
                             pid_backup = conf.sites[site]["additional_instrument"][
                                 product_request
                             ]
-                            resp_backup = requests.get(
+                            resp_backup = requests.get(  # noqa: S113
                                 params.url_instrument.format(
                                     site=site,
                                     date_start=month_start.strftime("%Y-%m-%d"),
@@ -310,7 +315,7 @@ def cloudnet(
                     # ------------------------------------------------------
                     elif product in params.geophysical_products:
                         product_request = product
-                        resp = requests.get(
+                        resp = requests.get(  # noqa: S113
                             params.url_geophysical.format(
                                 site=site,
                                 date_start=month_start.strftime("%Y-%m-%d"),
@@ -353,15 +358,12 @@ def cloudnet(
                 # --------------------------------------
                 final_df = pd.concat(dfs, axis=1)
                 final_df.index.name = "dates"
-                # print(final_df)
-                # print("\n\n")
                 filename = (
                     output_dir
                     / site
-                    / f"{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{site}_cloudnet_data_coverage.csv"
+                    / f"{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{site}_cloudnet_data_coverage.csv"  # noqa:E501
                 )
                 filename.parent.mkdir(parents=True, exist_ok=True)
-                # print("\t\t", filename, "saved")
                 final_df.to_csv(filename, float_format="%.2f")
                 dfs_station.append(final_df)
 
@@ -374,15 +376,15 @@ def cloudnet(
                 print("Plot saved")
 
 
-def process_data(
-    data,
-    product_name,
-    perfect_month_dates,
-    sites,
-    site,
-    product_request,
-    is_backup=False,
-):
+def process_data(  # noqa: D103
+    data: pd.DataFrame,
+    product_name: str,
+    perfect_month_dates: int,
+    sites: dict,
+    site: str,
+    product_request: str,
+    is_backup: bool = False,  # noqa: FBT001 FBT002
+) -> pd.DataFrame:
     if data:
         measurement_dates, product_coverages = [], []
         for d in data:

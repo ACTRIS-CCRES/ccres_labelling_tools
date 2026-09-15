@@ -1,0 +1,11 @@
+_commit: v0.2.2-6-g7dc1a4a
+_src_path: /home/madrouin/Dev/espri/templates/python_template
+author_email: jean-francois.ribaud@ipsl.fr
+author_name: Jean-Francois Ribaud
+description: A ACTRIS-CCRES package containing tools used to label nNational Facilities
+license: AGPL-3.0
+module_name: core
+package_name: ccres_labelling_tools
+project_name: CCRES labelling tools
+python_version: '3.13'
+distribution_name: "ccres-labelling-tools"

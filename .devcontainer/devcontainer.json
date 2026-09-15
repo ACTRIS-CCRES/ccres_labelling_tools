@@ -1,0 +1,51 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+    "name": "ccres-labelling-tools",
+    // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+    "image": "mcr.microsoft.com/devcontainers/python:3.13",
+    "runArgs": [],
+    "features": {
+        "ghcr.io/devcontainers/features/git-lfs:1": {
+            "autopull": true
+        }
+    },
+    // Use 'postCreateCommand' to run commands after the container is created.
+    "postCreateCommand": "./.devcontainer/postCreateCommand.sh",
+    // Configure tool-specific properties.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "astral-sh.ty",
+                "bierner.markdown-mermaid",
+                "charliemarsh.ruff",
+                "davidanson.vscode-markdownlint",
+                "ms-python.debugpy",
+                "ms-python.python",
+                "tamasfe.even-better-toml",
+                "yzhang.markdown-all-in-one",
+                "zensical.zensical-studio"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "[python]": {
+                    "editor.defaultFormatter": "charliermarsh.ruff"
+                },
+                "python.testing.pytestArgs": [
+                    "tests"
+                ],
+                "python.testing.unittestEnabled": false,
+                "python.testing.pytestEnabled": true,
+                "python.defaultInterpreterPath": "/workspaces/ccres-labelling-tools/.venv/bin/python",
+                "python.testing.pytestPath": "/workspaces/ccres-labelling-tools/.venv/bin/pytest",
+                "[markdown]": {
+                   "editor.formatOnSave": true,
+                    "editor.formatOnPaste": true
+                },
+                "editor.codeActionsOnSave": {
+                    "source.fixAll.markdownlint": "explicit"
+                }
+            }
+        }
+    }
+}
