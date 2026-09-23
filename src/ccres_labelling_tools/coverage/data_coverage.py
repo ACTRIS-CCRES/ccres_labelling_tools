@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-from ccres_labelling_tools.coverage.plot import plot_data_coverage
+from ccres_labelling_tools.coverage.plot import plot_data_coverage_v2
 from ccres_labelling_tools.coverage.utils import round_to_last_complete_month
 
 
@@ -372,7 +372,9 @@ def cloudnet(  # noqa:C901
             # --------------------------------------
             if makeplot:
                 df2plot = pd.concat(dfs_station).sort_index(ascending=True)
-                plot_data_coverage(station, df2plot, months_start, output_dir, params)
+                plot_data_coverage_v2(
+                    site, station, df2plot, months_start, output_dir, params
+                )
                 print("Plot saved")
 
 

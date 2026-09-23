@@ -148,9 +148,18 @@ sites = {
         "country": "Spain",
         "date_start_1b": "2024-01-01",
         "nominal_instrument": {
-            "radar": "https://hdl.handle.net/21.12132/3.20570e63f7b1496c",
-            "mwr": "https://hdl.handle.net/21.12132/3.b2554a7cc6db4139",
-            "lidar": "https://hdl.handle.net/21.12132/3.77a75f3b32294855",
+            "radar": {
+                "1": "https://hdl.handle.net/21.12132/3.1e67e6c234d84b19",
+                "2": "https://hdl.handle.net/21.12132/3.20570e63f7b1496c",
+            },
+            "mwr": {
+                "1": "https://hdl.handle.net/21.12132/3.b2554a7cc6db4139",
+                "2": "https://hdl.handle.net/21.12132/3.fc2eb938593e4573",
+            },
+            "lidar": {
+                "1": "https://hdl.handle.net/21.12132/3.77a75f3b32294855",
+                "2": "https://hdl.handle.net/21.12132/3.25a1c14a153b4706",
+            },
             "doppler-lidar": "https://hdl.handle.net/21.12132/3.1d227f1b12b04efc",
             "doppler-lidar-wind": None,
             "epsilon-lidar": None,
@@ -161,8 +170,7 @@ sites = {
         "additional_instrument": {
             "doppler-lidar": "https://hdl.handle.net/21.12132/3.eadafa59ffa648de",
             "mrr": "https://hdl.handle.net/21.12132/3.8db7457671ef4052",
-            "radar1": "https://hdl.handle.net/21.12132/3.1e67e6c234d84b19",
-            "radar2": "https://hdl.handle.net/21.12132/3.45ee9a92825c447a",
+            "radar1": "https://hdl.handle.net/21.12132/3.45ee9a92825c447a",
         },
         "excluded_periods": {},
     },
@@ -212,7 +220,8 @@ sites = {
             "doppler-lidar": "https://hdl.handle.net/21.12132/3.48bd7da035b94ffd",
             "doppler-lidar-wind": "https://hdl.handle.net/21.12132/3.48bd7da035b94ffd",
             "epsilon-lidar": "https://hdl.handle.net/21.12132/3.48bd7da035b94ffd",
-            "disdrometer": "https://hdl.handle.net/21.12132/3.2a1ca46ed70c4929",
+            "disdrometer": {"1":"https://hdl.handle.net/21.12132/3.2a1ca46ed70c4929",
+                            "2":"(https://hdl.handle.net/21.12132/3.cc152203d7824c70"},
             "weather-station": "https://hdl.handle.net/21.12132/3.726b3b29de1949cc",
             "rain-gauge": "https://hdl.handle.net/21.12132/3.49ca09deca9a4e3e",
         },
@@ -421,7 +430,10 @@ sites = {
         "country": "France",
         "date_start_1b": "2023-04-01",
         "nominal_instrument": {
-            "radar": "https://hdl.handle.net/21.12132/3.643b7b5b43814e6f",
+            "radar": {
+                "1": "https://hdl.handle.net/21.12132/3.643b7b5b43814e6f",
+                "2": "https://hdl.handle.net/21.12132/3.c682ac7146654de7",
+            },
             "mwr": "https://hdl.handle.net/21.12132/3.770aaf228a974dd6",
             "lidar": "https://hdl.handle.net/21.12132/3.b14e15ec9c9b43fb",
             "doppler-lidar": {
