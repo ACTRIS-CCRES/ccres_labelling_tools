@@ -1,10 +1,13 @@
 """Utility functions for coverage analysis and plotting."""
 
 import re
+from importlib import resources as impresources
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from ccres_labelling_tools.assets import logo as logo_dir
 
 
 def extract_short_pid(full_pid: str) -> str:
@@ -67,13 +70,12 @@ def check_vars_in_df(df: pd.DataFrame, list_vars: list) -> pd.DataFrame:
 
 
 def add_logo(
-    logo_name: str = "CCRES_logo.png",
     left: float = 0.75,
     bottom: float = 0.925,
     width: float = 0.15,
     height: float = 0.08,
 ) -> None:
-    """add logos to the current plot on top right corner
+    """Add logos to the current plot on top right corner.
 
     Parameters
     ----------
@@ -81,12 +83,16 @@ def add_logo(
         directory name
     station: str
         station name
+
     """
-    plt.axes([left, bottom, width, height])
+    plt.axes((left, bottom, width, height))  # left, bottom, width, height
     plt.axis("off")
 
-    try:
-        logo = plt.imread(f"assets/logo/{logo_name}")
-        plt.imshow(logo, origin="upper")
-    except OSError:
-        print("PLOT: Impossible to include the logo")
+    with impresources.as_file(
+        impresources.files(logo_dir).joinpath("logo_CCRES.png")
+    ) as img_path:
+        logo = plt.imread(img_path)
+
+    plt.imshow(logo, origin="upper")
+
+    return
