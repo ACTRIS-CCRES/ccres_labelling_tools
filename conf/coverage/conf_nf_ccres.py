@@ -220,8 +220,10 @@ sites = {
             "doppler-lidar": "https://hdl.handle.net/21.12132/3.48bd7da035b94ffd",
             "doppler-lidar-wind": "https://hdl.handle.net/21.12132/3.48bd7da035b94ffd",
             "epsilon-lidar": "https://hdl.handle.net/21.12132/3.48bd7da035b94ffd",
-            "disdrometer": {"1":"https://hdl.handle.net/21.12132/3.2a1ca46ed70c4929",
-                            "2":"(https://hdl.handle.net/21.12132/3.cc152203d7824c70"},
+            "disdrometer": {
+                "1": "https://hdl.handle.net/21.12132/3.2a1ca46ed70c4929",
+                "2": "(https://hdl.handle.net/21.12132/3.cc152203d7824c70",
+            },
             "weather-station": "https://hdl.handle.net/21.12132/3.726b3b29de1949cc",
             "rain-gauge": "https://hdl.handle.net/21.12132/3.49ca09deca9a4e3e",
         },
