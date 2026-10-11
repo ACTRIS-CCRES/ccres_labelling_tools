@@ -1,6 +1,6 @@
 # CCRES labelling tools
 
-A ACTRIS-CCRES package containing tools used to label nNational Facilities
+A ACTRIS-CCRES package containing tools used to label National Facilities
 
 ## Prerequisites
 
@@ -16,9 +16,9 @@ uv sync
 
 ## Usage
 
-```bash
-uv run python -m ccres_labelling_tools.core
-```
+### Coverage
+
+#### Configuration
 
 ## Development
 
