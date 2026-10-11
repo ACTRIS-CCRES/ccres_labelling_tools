@@ -89,7 +89,7 @@ def add_logo(
     plt.axis("off")
 
     with impresources.as_file(
-        impresources.files(logo_dir).joinpath("logo_CCRES.png")
+        impresources.files(logo_dir).joinpath("CCRES_logo.png")
     ) as img_path:
         logo = plt.imread(img_path)
 
