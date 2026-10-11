@@ -158,7 +158,14 @@ def plot_data_coverage(
     plt.close()
 
 
-def plot_data_coverage_v2(location, site, df, months_start, output_dir, params):
+def plot_data_coverage_v2(  # noqa: C901
+    location: str,
+    site: dict,
+    df: pd.DataFrame,
+    months_start: pd.DatetimeIndex,
+    output_dir: Path,
+    params: ModuleType,
+) -> None:
     """_summary_
 
     Parameters
@@ -197,7 +204,7 @@ def plot_data_coverage_v2(location, site, df, months_start, output_dir, params):
         # get color
         df_prod = df[product]
         colors = []
-        for val in df_prod.values:
+        for val in df_prod.to_numpy():
             if pd.isna(val):
                 colors.append("none")
             elif val >= 75:
