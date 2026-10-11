@@ -296,7 +296,7 @@ def plot_data_coverage_v2(  # noqa: C901
     plt.subplots_adjust(top=0.86)
 
     # Save in the same directory as the CSV files (named after the cloudnet site)
-    filename = f"{site['station'].lower()}_{date_start_analysis.strftime('%Y%m%d')}_{date_end_analysis.strftime('%Y%m%d')}_cloudnet_data_availability.png"  # noqa: E501
+    filename = f"{location}_{date_start_analysis.strftime('%Y%m%d')}_{date_end_analysis.strftime('%Y%m%d')}_cloudnet_data_availability.png"  # noqa: E501
     output_filename = output_dir / location / filename
     output_filename.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_filename)
