@@ -1,7 +1,13 @@
 name: CI
 
 on:
+  # Only run on push for the default branch and tags: other branches are
+  # covered by the pull_request trigger (avoids running the CI twice)
   push:
+    branches:
+      - main
+    tags:
+      - "*"
     paths-ignore:
       - "docs/**"
       - "*.md"
