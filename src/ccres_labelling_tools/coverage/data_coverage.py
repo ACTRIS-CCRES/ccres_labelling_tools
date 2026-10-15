@@ -1,5 +1,6 @@
 """Process Coverage data."""
 
+import itertools
 from collections import Counter
 from pathlib import Path
 from types import ModuleType
@@ -10,6 +11,48 @@ import requests
 
 from ccres_labelling_tools.coverage.plot import plot_data_coverage_v2
 from ccres_labelling_tools.coverage.utils import round_to_last_complete_month
+
+BASE = "https://cloudnet.fmi.fi/api"  # TODO: params
+
+
+def get_file(uuid: str) -> dict:
+    """_summary_
+
+    Parameters
+    ----------
+    uuid : str
+        _description_
+
+    Returns
+    -------
+    dict
+        _description_
+    """
+    r = requests.get(f"{BASE}/files/{uuid}")  # noqa: S113
+    r.raise_for_status()
+    return r.json()
+
+
+def source_instruments(uuid: str) -> dict:
+    """get instruments info used to generate a product file"""
+    file = get_file(uuid)
+    instruments = []
+    for src_id in file.get("sourceFileIds") or []:
+        src = get_file(src_id)
+        if src.get("instrument"):
+            instruments.append(src["instrument"])
+        else:
+            instruments.extend(source_instruments(src_id))
+    return instruments
+
+
+def normalize_pids(nominal: str) -> list:
+    """str -> [str]"""
+    if nominal is None:
+        return []
+    if isinstance(nominal, dict):
+        return list(nominal.values())
+    return [nominal]
 
 
 def define_request_and_call(product: str, station: dict) -> tuple[str, str]:
@@ -331,6 +374,31 @@ def cloudnet(  # noqa:C901
                     # Analyze resp json
                     # --------------------------------------
                     prod_data = resp.json()
+                    if product in [
+                        "categorize",
+                        "classification",
+                    ]:  # TODO: add all L2 products ?
+                        radar_pids = normalize_pids(
+                            station["nominal_instrument"]["radar"]
+                        )
+                        mwr_pids = normalize_pids(station["nominal_instrument"]["mwr"])
+
+                        for i in range(len(prod_data)):
+                            instr_pids = [
+                                instr["pid"]
+                                for instr in source_instruments(prod_data[i]["uuid"])
+                            ]
+
+                            # check all combos (radar, mwr)
+                            combos_ok = any(
+                                r in instr_pids and m in instr_pids
+                                for r, m in itertools.product(radar_pids, mwr_pids)
+                            )
+                            if not combos_ok:
+                                prod_data[i].pop(
+                                    "coverage", None
+                                )  # remove coverage info -> to be not considered
+
                     df = process_data(
                         prod_data,
                         product,
