@@ -1,6 +1,5 @@
 """Process Coverage data."""
 
-import itertools
 from collections import Counter
 from pathlib import Path
 from types import ModuleType
@@ -13,6 +12,13 @@ from ccres_labelling_tools.coverage.plot import plot_data_coverage_v2
 from ccres_labelling_tools.coverage.utils import round_to_last_complete_month
 
 BASE = "https://cloudnet.fmi.fi/api"  # TODO: params
+
+# L2 products derived from categorize: their validity is the one of categorize
+L2_PRODUCTS = ["categorize", "classification"]  # TODO: add all L2 products ?
+
+# Shared session: reuse the connection to the API instead of opening a new one
+# (and doing a TLS handshake) for each request
+SESSION = requests.Session()
 
 
 def get_file(uuid: str) -> dict:
@@ -28,22 +34,9 @@ def get_file(uuid: str) -> dict:
     dict
         _description_
     """
-    r = requests.get(f"{BASE}/files/{uuid}")  # noqa: S113
+    r = SESSION.get(f"{BASE}/files/{uuid}")
     r.raise_for_status()
     return r.json()
-
-
-def source_instruments(uuid: str) -> dict:
-    """get instruments info used to generate a product file"""
-    file = get_file(uuid)
-    instruments = []
-    for src_id in file.get("sourceFileIds") or []:
-        src = get_file(src_id)
-        if src.get("instrument"):
-            instruments.append(src["instrument"])
-        else:
-            instruments.extend(source_instruments(src_id))
-    return instruments
 
 
 def normalize_pids(nominal: str) -> list:
@@ -53,6 +46,106 @@ def normalize_pids(nominal: str) -> list:
     if isinstance(nominal, dict):
         return list(nominal.values())
     return [nominal]
+
+
+def get_instrument_uuids(
+    site: str,
+    month_start: pd.Timestamp,
+    month_end: pd.Timestamp,
+    pids: list,
+) -> set[str]:
+    """Return the uuids of all the files (any product) produced by the instruments.
+
+    Parameters
+    ----------
+    site : str
+        cloudnet site
+    month_start : pd.Timestamp
+        start of the period
+    month_end : pd.Timestamp
+        end of the period
+    pids : list
+        instruments PIDs
+
+    Returns
+    -------
+    set[str]
+        uuids of the files
+    """
+    uuids = set()
+    for pid in pids:
+        # without product, all the products of the instrument are returned
+        r = SESSION.get(
+            f"{BASE}/files",
+            params={
+                "site": site,
+                "dateFrom": month_start.strftime("%Y-%m-%d"),
+                "dateTo": month_end.strftime("%Y-%m-%d"),
+                "instrumentPid": pid,
+            },
+        )
+        r.raise_for_status()
+        uuids.update(f["uuid"] for f in r.json())
+    return uuids
+
+
+def get_categorize_validity(
+    site: str,
+    month_start: pd.Timestamp,
+    month_end: pd.Timestamp,
+    station: dict,
+    params: ModuleType,
+) -> dict[str, bool]:
+    """Check for each day if categorize was produced with nominal radar and mwr.
+
+    Parameters
+    ----------
+    site : str
+        cloudnet site
+    month_start : pd.Timestamp
+        start of the period
+    month_end : pd.Timestamp
+        end of the period
+    station : dict
+        station configuration
+    params : ModuleType
+        parameters
+
+    Returns
+    -------
+    dict[str, bool]
+        validity of categorize per measurement date (YYYY-MM-DD)
+    """
+    radar_uuids = get_instrument_uuids(
+        site,
+        month_start,
+        month_end,
+        normalize_pids(station["nominal_instrument"]["radar"]),
+    )
+    mwr_uuids = get_instrument_uuids(
+        site,
+        month_start,
+        month_end,
+        normalize_pids(station["nominal_instrument"]["mwr"]),
+    )
+
+    resp = SESSION.get(
+        params.url_geophysical.format(
+            site=site,
+            date_start=month_start.strftime("%Y-%m-%d"),
+            date_end=month_end.strftime("%Y-%m-%d"),
+            product="categorize",
+        )
+    )
+    resp.raise_for_status()
+
+    validity = {}
+    for categorize in resp.json():
+        sources = set(get_file(categorize["uuid"]).get("sourceFileIds") or [])
+        validity[categorize["measurementDate"]] = bool(
+            sources & radar_uuids and sources & mwr_uuids
+        )
+    return validity
 
 
 def define_request_and_call(product: str, station: dict) -> tuple[str, str]:
@@ -102,7 +195,7 @@ def get_most_present_pid(
     pid_counts = Counter()
 
     for pid in pids.values():
-        resp = requests.get(  # noqa : S113
+        resp = SESSION.get(
             params.url_instrument.format(
                 site=site,
                 date_start=month_start.strftime("%Y-%m-%d"),
@@ -282,6 +375,7 @@ def cloudnet(  # noqa:C901
                     month_end.strftime("%Y-%m-%d"),
                 )
                 dfs = []  # list df per product
+                categorize_validity = None  # nominal instruments check for L2
                 perfect_month_dates = pd.date_range(month_start, month_end, freq="1D")
 
                 # Loop over products
@@ -314,7 +408,7 @@ def cloudnet(  # noqa:C901
 
                             # 3 - Do request
                             # ---------------------------------------
-                            resp = requests.get(  # noqa: S113
+                            resp = SESSION.get(
                                 params.url_instrument.format(
                                     site=site,
                                     date_start=month_start.strftime("%Y-%m-%d"),
@@ -326,7 +420,7 @@ def cloudnet(  # noqa:C901
                         # if instrument but any reason does not work
                         # ----------------------------------------------------
                         else:  # request as geophysical products -> without pid
-                            resp = requests.get(  # noqa: S113
+                            resp = SESSION.get(
                                 params.url_geophysical.format(
                                     site=site,
                                     date_start=month_start.strftime("%Y-%m-%d"),
@@ -342,7 +436,7 @@ def cloudnet(  # noqa:C901
                             pid_backup = conf.sites[site]["additional_instrument"][
                                 product_request
                             ]
-                            resp_backup = requests.get(  # noqa: S113
+                            resp_backup = SESSION.get(
                                 params.url_instrument.format(
                                     site=site,
                                     date_start=month_start.strftime("%Y-%m-%d"),
@@ -358,7 +452,7 @@ def cloudnet(  # noqa:C901
                     # ------------------------------------------------------
                     elif product in params.geophysical_products:
                         product_request = product
-                        resp = requests.get(  # noqa: S113
+                        resp = SESSION.get(
                             params.url_geophysical.format(
                                 site=site,
                                 date_start=month_start.strftime("%Y-%m-%d"),
@@ -374,30 +468,17 @@ def cloudnet(  # noqa:C901
                     # Analyze resp json
                     # --------------------------------------
                     prod_data = resp.json()
-                    if product in [
-                        "categorize",
-                        "classification",
-                    ]:  # TODO: add all L2 products ?
-                        radar_pids = normalize_pids(
-                            station["nominal_instrument"]["radar"]
-                        )
-                        mwr_pids = normalize_pids(station["nominal_instrument"]["mwr"])
-
-                        for i in range(len(prod_data)):
-                            instr_pids = [
-                                instr["pid"]
-                                for instr in source_instruments(prod_data[i]["uuid"])
-                            ]
-
-                            # check all combos (radar, mwr)
-                            combos_ok = any(
-                                r in instr_pids and m in instr_pids
-                                for r, m in itertools.product(radar_pids, mwr_pids)
+                    if product in L2_PRODUCTS:
+                        # computed once per month, shared by all L2 products
+                        if categorize_validity is None:
+                            categorize_validity = get_categorize_validity(
+                                site, month_start, month_end, station, params
                             )
-                            if not combos_ok:
-                                prod_data[i].pop(
-                                    "coverage", None
-                                )  # remove coverage info -> to be not considered
+
+                        for d in prod_data:
+                            if not categorize_validity.get(d["measurementDate"], False):
+                                # remove coverage info -> to be not considered
+                                d.pop("coverage", None)
 
                     df = process_data(
                         prod_data,
