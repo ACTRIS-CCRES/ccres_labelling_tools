@@ -437,7 +437,10 @@ sites = {
                 "2": "https://hdl.handle.net/21.12132/3.c682ac7146654de7",
             },
             "mwr": "https://hdl.handle.net/21.12132/3.770aaf228a974dd6",
-            "lidar": "https://hdl.handle.net/21.12132/3.b14e15ec9c9b43fb",
+            "lidar": {
+                "1": "https://hdl.handle.net/21.12132/3.b14e15ec9c9b43fb",
+                "2": "https://hdl.handle.net/21.12132/3.9b914f8c94c4438a",
+            },
             "doppler-lidar": {
                 "1": "https://hdl.handle.net/21.12132/3.d5ee0db6ac964a04",
                 "2": "https://hdl.handle.net/21.12132/3.455010e11c0545ae",
