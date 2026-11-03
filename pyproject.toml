@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "ccres-labelling-tools"
-version = "0.0.1"
+version = "0.1.0"
 description = "A ACTRIS-CCRES package containing tools used to label National Facilities"
 readme = "README.md"
 license = "AGPL-3.0"
