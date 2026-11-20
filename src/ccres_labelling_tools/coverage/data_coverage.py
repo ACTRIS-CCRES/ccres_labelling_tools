@@ -9,9 +9,7 @@ import pandas as pd
 import requests
 
 from ccres_labelling_tools.coverage.plot import plot_data_coverage_v2
-from ccres_labelling_tools.coverage.utils import round_to_last_complete_month
-
-BASE = "https://cloudnet.fmi.fi/api"  # TODO: params
+from ccres_labelling_tools.utils import round_to_last_complete_month
 
 # L2 products derived from categorize: their validity is the one of categorize
 L2_PRODUCTS = ["categorize", "classification"]  # TODO: add all L2 products ?
@@ -21,12 +19,14 @@ L2_PRODUCTS = ["categorize", "classification"]  # TODO: add all L2 products ?
 SESSION = requests.Session()
 
 
-def get_file(uuid: str) -> dict:
+def get_file(uuid: str, params: ModuleType) -> dict:
     """_summary_
 
     Parameters
     ----------
     uuid : str
+        _description_
+    params : ModuleType
         _description_
 
     Returns
@@ -34,7 +34,7 @@ def get_file(uuid: str) -> dict:
     dict
         _description_
     """
-    r = SESSION.get(f"{BASE}/files/{uuid}")
+    r = SESSION.get(f"{params.CLOUDNET_API_BASE_URL}/files/{uuid}")
     r.raise_for_status()
     return r.json()
 
@@ -53,6 +53,7 @@ def get_instrument_uuids(
     month_start: pd.Timestamp,
     month_end: pd.Timestamp,
     pids: list,
+    params: ModuleType,
 ) -> set[str]:
     """Return the uuids of all the files (any product) produced by the instruments.
 
@@ -66,6 +67,8 @@ def get_instrument_uuids(
         end of the period
     pids : list
         instruments PIDs
+    params : ModuleType
+        _description_
 
     Returns
     -------
@@ -76,7 +79,7 @@ def get_instrument_uuids(
     for pid in pids:
         # without product, all the products of the instrument are returned
         r = SESSION.get(
-            f"{BASE}/files",
+            f"{params.CLOUDNET_API_BASE_URL}/files",
             params={
                 "site": site,
                 "dateFrom": month_start.strftime("%Y-%m-%d"),
@@ -121,12 +124,14 @@ def get_categorize_validity(
         month_start,
         month_end,
         normalize_pids(station["nominal_instrument"]["radar"]),
+        params,
     )
     mwr_uuids = get_instrument_uuids(
         site,
         month_start,
         month_end,
         normalize_pids(station["nominal_instrument"]["mwr"]),
+        params,
     )
 
     resp = SESSION.get(
@@ -141,7 +146,7 @@ def get_categorize_validity(
 
     validity = {}
     for categorize in resp.json():
-        sources = set(get_file(categorize["uuid"]).get("sourceFileIds") or [])
+        sources = set(get_file(categorize["uuid"], params).get("sourceFileIds") or [])
         validity[categorize["measurementDate"]] = bool(
             sources & radar_uuids and sources & mwr_uuids
         )

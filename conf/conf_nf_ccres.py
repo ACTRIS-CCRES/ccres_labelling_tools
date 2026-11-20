@@ -227,7 +227,12 @@ sites = {
             "weather-station": "https://hdl.handle.net/21.12132/3.726b3b29de1949cc",
             "rain-gauge": "https://hdl.handle.net/21.12132/3.49ca09deca9a4e3e",
         },
-        "additional_instrument": {},
+        "additional_instrument": {
+            "radar": {
+                "1": "https://hdl.handle.net/21.12132/3.f7e002664a7a4e4e",
+                "2": "https://hdl.handle.net/21.12132/3.cd8c566efe7346e0",
+            }
+        },
         "excluded_periods": {
             "1": {
                 "instrument": "https://hdl.handle.net/21.12132/3.f51736b5923b483c",

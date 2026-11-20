@@ -49,3 +49,8 @@ def conf_dir(root_dir):
 @pytest.fixture
 def conf_coverage_dir(conf_dir):
     return conf_dir / "coverage"
+
+
+@pytest.fixture
+def conf_pointing_dir(conf_dir):
+    return conf_dir / "vertical_pointing"

@@ -9,7 +9,7 @@ from matplotlib.dates import DateFormatter, MonthLocator
 from matplotlib.patches import Patch
 from matplotlib.ticker import MultipleLocator
 
-from ccres_labelling_tools.coverage.utils import (
+from ccres_labelling_tools.utils import (
     add_logo,
     check_vars_in_df,
     extract_short_pid,
