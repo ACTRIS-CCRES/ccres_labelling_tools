@@ -21,15 +21,18 @@ def test_cloudnet_data_coverage(conf_coverage_dir, data_output_dir):
             "20260401",
             "20260531",
             "--conf-nfs",
-            str(conf_coverage_dir / "conf_nf_ccres.py"),
+            str(conf_coverage_dir.parent / "conf_nf_ccres.py"),
             "--conf-params",
             str(conf_coverage_dir / "params.py"),
             "--output_dir",
-            str(data_output_dir),
+            str(data_output_dir / "coverage"),
             "--makeplot",
             "True",
         ],
     )
+    print("Exit code:", result.exit_code)
+    print("Output:", result.output)
+    print("Exception:", result.exception)
 
     # Check that the command succeeded
     assert result.exit_code == 0, (
