@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """script to get daily data coverage info associated to Cloudnet's products
 for different National Facilities on a monthly time basis.
-"""
+"""  # noqa: D205
 
 import datetime as dt
 import sys
