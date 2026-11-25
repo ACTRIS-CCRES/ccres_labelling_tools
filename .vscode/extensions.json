@@ -2,7 +2,7 @@
     "recommendations": [
         "astral-sh.ty",
         "bierner.markdown-mermaid",
-        "charliemarsh.ruff",
+        "charliermarsh.ruff",
         "davidanson.vscode-markdownlint",
         "ms-python.debugpy",
         "ms-python.python",

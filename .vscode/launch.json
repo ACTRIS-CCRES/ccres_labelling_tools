@@ -9,10 +9,19 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: Module",
+            "name": "CLI: run-get-data-coverage-cloudnet",
             "type": "debugpy",
             "request": "launch",
-            "module": "ccres_labelling_tools",
+            "module": "ccres_labelling_tools.coverage.cli",
+            "args": "${command:pickArgs}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "CLI: run-get-instrument-vertical-pointing",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "ccres_labelling_tools.vertical_pointing.cli",
+            "args": "${command:pickArgs}",
             "console": "integratedTerminal"
         }
     ]
