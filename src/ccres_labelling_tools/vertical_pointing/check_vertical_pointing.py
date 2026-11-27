@@ -196,6 +196,13 @@ def get_percentage_vertical_pointing_mwr(
     return hourly_percentage.to_frame(name="percentage_vertical_pointing")
 
 
+# Hourly vertical pointing percentage, per instrument type
+GET_PERCENTAGE_VERTICAL_POINTING = {
+    "radar": get_percentage_vertical_pointing_radar,
+    "mwr": get_percentage_vertical_pointing_mwr,
+}
+
+
 def get_month_starts(start: pd.Timestamp, end: pd.Timestamp) -> pd.DatetimeIndex:
     """First day of each month between start and end."""
     start = pd.Period(start, freq="M")
@@ -245,7 +252,81 @@ def get_instruments(config: dict, instrument_type: str) -> dict:
     return instruments
 
 
-def instruments(  # noqa: C901
+def process_day(
+    site: str,
+    date: pd.Timestamp,
+    instrument_type: str,
+    pid: str,
+    instrument_id: str,
+    input_dir: Path,
+    params: ModuleType,
+) -> pd.DataFrame:
+    """Return the hourly vertical pointing percentage of an instrument for a day.
+
+    Parameters
+    ----------
+    site : str
+        cloudnet site
+    date : pd.Timestamp
+        day to process
+    instrument_type : str
+        "radar" or "mwr"
+    pid : str
+        instrument PID
+    instrument_id : str
+        Cloudnet instrument id (e.g. "mira-35")
+    input_dir : Path
+        directory of the instrument files
+    params : ModuleType
+        parameters
+
+    Returns
+    -------
+    pd.DataFrame
+        percentage for each hour of the day, NaN if there is no file for the day
+    """
+    perfect_day_dates = pd.date_range(
+        date, date + pd.Timedelta(hours=23, minutes=59), freq="1h"
+    )
+
+    input_file = get_instrument_filename(
+        site,
+        date,
+        instrument_type,
+        extract_short_pid(pid),
+        input_dir,
+        params,
+        instrument_id,
+    )
+    if input_file is None:
+        return create_empty_df(perfect_day_dates, params)
+
+    with xr.open_dataset(input_file) as ds:
+        if ds.instrument_pid != pid:
+            return create_empty_df(perfect_day_dates, params)
+        return GET_PERCENTAGE_VERTICAL_POINTING[instrument_type](ds, perfect_day_dates)
+
+
+def get_output_filename(
+    output_dir: Path,
+    site: str,
+    month_start: pd.Timestamp,
+    month_end: pd.Timestamp,
+    instrument_type: str,
+    pid: str,
+    instrument_id: str,
+) -> Path:
+    """Return the path of the monthly csv file of an instrument."""
+    # the radar model (e.g. "mira-35") is part of the radar filenames
+    model = f"{instrument_id.lower()}_" if instrument_type == "radar" else ""
+    return (
+        output_dir
+        / site
+        / f"{site}_{month_start:%Y%m%d}_{month_end:%Y%m%d}_{model}{extract_short_pid(pid)}_{instrument_type}_vertical_pointing.csv"  # noqa: E501
+    )
+
+
+def instruments(
     new_sites: list[str],
     new_date_start: pd.Timestamp,
     new_date_end: pd.Timestamp,
@@ -273,103 +354,53 @@ def instruments(  # noqa: C901
     params : _type_
         _description_
     """
+    instrument_ids = cloudnet.get_instrument_ids()
+    months_start = get_month_starts(new_date_start, new_date_end)
+    months_end = get_month_ends(new_date_start, new_date_end)
+
     # Loop over sites
     # -------------------------------------
-    instrument_ids = cloudnet.get_instrument_ids()
-
     for site in new_sites:
         print(site)
         station = conf.sites[site]  # get conf for a specific site
 
         for instrument_type in ["radar", "mwr"]:
-            instruments = get_instruments(station, instrument_type)
-
-            # Get PID-s
-            pids = list(instruments.values())
-            short_pids = [extract_short_pid(pid) for pid in instruments.values()]
-
             # Do monthly analysis per instrument (PID)
-            for short_pid, pid in zip(short_pids, pids, strict=False):
-                radar_id = instrument_ids.get(pid, "")
-                if instrument_type == "radar" and not radar_id:
+            for pid in get_instruments(station, instrument_type).values():
+                instrument_id = instrument_ids.get(pid, "")
+                if instrument_type == "radar" and not instrument_id:
                     msg = f"Unknown instrument PID on Cloudnet: {pid}"
                     raise ValueError(msg)
-                months_start = get_month_starts(new_date_start, new_date_end)
-                months_end = get_month_ends(new_date_start, new_date_end)
+
                 for month_start, month_end in zip(
-                    months_start, months_end, strict=False
+                    months_start, months_end, strict=True
                 ):
-                    dfs_day = []
-                    perfect_month_dates = pd.date_range(
-                        month_start, month_end, freq="1D"
+                    df_month = pd.concat(
+                        [
+                            process_day(
+                                site,
+                                date,
+                                instrument_type,
+                                pid,
+                                instrument_id,
+                                input_dir,
+                                params,
+                            )
+                            for date in pd.date_range(month_start, month_end, freq="1D")
+                        ],
+                        axis=0,
                     )
-                    for date in perfect_month_dates:
-                        perfect_day_dates = pd.date_range(
-                            date, date + pd.Timedelta(hours=23, minutes=59), freq="1h"
-                        )
-
-                        # Get filename
-                        # -------------------------------------------------
-                        if instrument_type == "radar":
-                            filename = get_instrument_filename(
-                                site,
-                                date,
-                                instrument_type,
-                                short_pid,
-                                input_dir,
-                                params,
-                                radar_id,
-                            )
-                        elif instrument_type == "mwr":
-                            filename = get_instrument_filename(
-                                site,
-                                date,
-                                instrument_type,
-                                short_pid,
-                                input_dir,
-                                params,
-                            )
-
-                        # manage no file
-                        # -------------------------------------------------
-                        if filename is None:
-                            tmp_df = create_empty_df(perfect_day_dates, params)
-                            dfs_day.append(tmp_df)
-                            continue
-
-                        # read file and calculate vertical pointing
-                        # --------------------------------------------------
-                        with xr.open_dataset(filename) as ds:
-                            if instrument_type == "radar":
-                                if ds.instrument_pid != pid:
-                                    tmp_df = create_empty_df(perfect_day_dates, params)
-                                else:
-                                    tmp_df = get_percentage_vertical_pointing_radar(
-                                        ds, perfect_day_dates
-                                    )
-                            elif instrument_type == "mwr":
-                                if ds.instrument_pid != pid:
-                                    tmp_df = create_empty_df(perfect_day_dates, params)
-                                else:
-                                    tmp_df = get_percentage_vertical_pointing_mwr(
-                                        ds, perfect_day_dates
-                                    )
-                        dfs_day.append(tmp_df)
-                    df_day = pd.concat(dfs_day, axis=0)
 
                     # Save
                     # --------------------------------------------------
-                    if instrument_type == "radar":
-                        filename = (
-                            output_dir
-                            / site
-                            / f"{site}_{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{radar_id.lower()}_{short_pid}_radar_vertical_pointing.csv"  # noqa:E501
-                        )
-                    elif instrument_type == "mwr":
-                        filename = (
-                            output_dir
-                            / site
-                            / f"{site}_{month_start.strftime('%Y%m%d')}_{month_end.strftime('%Y%m%d')}_{short_pid}_mwr_vertical_pointing.csv"  # noqa:E501
-                        )
-                    filename.parent.mkdir(parents=True, exist_ok=True)
-                    df_day.to_csv(filename, float_format="%.2f")
+                    output_file = get_output_filename(
+                        output_dir,
+                        site,
+                        month_start,
+                        month_end,
+                        instrument_type,
+                        pid,
+                        instrument_id,
+                    )
+                    output_file.parent.mkdir(parents=True, exist_ok=True)
+                    df_month.to_csv(output_file, float_format="%.2f")
