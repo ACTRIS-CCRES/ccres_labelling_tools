@@ -93,7 +93,7 @@ ini_options.filterwarnings = [
 ]
 
 [tool.coverage]
-run.source = [ "src/", "tests/" ]
+run.source = [ "src/" ]
 run.omit = [ "*.pyx" ]
 run.branch = true
 run.parallel = true
