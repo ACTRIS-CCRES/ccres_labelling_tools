@@ -5,36 +5,10 @@ from types import ModuleType
 
 import numpy as np
 import pandas as pd
-import requests
 import xarray as xr
 
+from ccres_labelling_tools import cloudnet
 from ccres_labelling_tools.utils import extract_short_pid
-
-# Reuse the same connection for all the requests to the Cloudnet API
-SESSION = requests.Session()
-
-
-def get_instrument_ids(params: ModuleType) -> dict[str, str]:
-    """Return the Cloudnet instrument id (e.g. "mira-35") of each instrument PID.
-
-    All the instruments are fetched in a single request.
-
-    Parameters
-    ----------
-    params : ModuleType
-        parameters, with the Cloudnet API URL
-
-    Returns
-    -------
-    dict[str, str]
-        instrument id for each instrument PID
-    """
-    response = SESSION.get(
-        f"{params.CLOUDNET_API_BASE_URL}/instrument-pids", timeout=30
-    )
-    response.raise_for_status()
-
-    return {item["pid"]: item["instrument"]["id"] for item in response.json()}
 
 
 def get_instrument_filename(
@@ -320,7 +294,7 @@ def instruments(  # noqa: C901
     # Loop over sites
     # -------------------------------------
     sites_to_analyzed = define_list_sites(new_sites, conf)
-    instrument_ids = get_instrument_ids(params)
+    instrument_ids = cloudnet.get_instrument_ids()
 
     for site in sites_to_analyzed:
         print(site)

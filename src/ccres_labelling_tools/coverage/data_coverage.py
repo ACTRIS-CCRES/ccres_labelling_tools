@@ -6,37 +6,13 @@ from types import ModuleType
 
 import numpy as np
 import pandas as pd
-import requests
 
+from ccres_labelling_tools.cloudnet import get_file, get_files
 from ccres_labelling_tools.coverage.plot import plot_data_coverage_v2
 from ccres_labelling_tools.utils import round_to_last_complete_month
 
 # L2 products derived from categorize: their validity is the one of categorize
 L2_PRODUCTS = ["categorize", "classification"]  # TODO: add all L2 products ?
-
-# Shared session: reuse the connection to the API instead of opening a new one
-# (and doing a TLS handshake) for each request
-SESSION = requests.Session()
-
-
-def get_file(uuid: str, params: ModuleType) -> dict:
-    """_summary_
-
-    Parameters
-    ----------
-    uuid : str
-        _description_
-    params : ModuleType
-        _description_
-
-    Returns
-    -------
-    dict
-        _description_
-    """
-    r = SESSION.get(f"{params.CLOUDNET_API_BASE_URL}/files/{uuid}")
-    r.raise_for_status()
-    return r.json()
 
 
 def normalize_pids(nominal: str) -> list:
@@ -53,7 +29,6 @@ def get_instrument_uuids(
     month_start: pd.Timestamp,
     month_end: pd.Timestamp,
     pids: list,
-    params: ModuleType,
 ) -> set[str]:
     """Return the uuids of all the files (any product) produced by the instruments.
 
@@ -67,8 +42,6 @@ def get_instrument_uuids(
         end of the period
     pids : list
         instruments PIDs
-    params : ModuleType
-        _description_
 
     Returns
     -------
@@ -78,17 +51,8 @@ def get_instrument_uuids(
     uuids = set()
     for pid in pids:
         # without product, all the products of the instrument are returned
-        r = SESSION.get(
-            f"{params.CLOUDNET_API_BASE_URL}/files",
-            params={
-                "site": site,
-                "dateFrom": month_start.strftime("%Y-%m-%d"),
-                "dateTo": month_end.strftime("%Y-%m-%d"),
-                "instrumentPid": pid,
-            },
-        )
-        r.raise_for_status()
-        uuids.update(f["uuid"] for f in r.json())
+        files = get_files(site, month_start, month_end, pid=pid)
+        uuids.update(f["uuid"] for f in files)
     return uuids
 
 
@@ -97,7 +61,6 @@ def get_categorize_validity(
     month_start: pd.Timestamp,
     month_end: pd.Timestamp,
     station: dict,
-    params: ModuleType,
 ) -> dict[str, bool]:
     """Check for each day if categorize was produced with nominal radar and mwr.
 
@@ -111,8 +74,6 @@ def get_categorize_validity(
         end of the period
     station : dict
         station configuration
-    params : ModuleType
-        parameters
 
     Returns
     -------
@@ -124,29 +85,17 @@ def get_categorize_validity(
         month_start,
         month_end,
         normalize_pids(station["nominal_instrument"]["radar"]),
-        params,
     )
     mwr_uuids = get_instrument_uuids(
         site,
         month_start,
         month_end,
         normalize_pids(station["nominal_instrument"]["mwr"]),
-        params,
     )
-
-    resp = SESSION.get(
-        params.url_geophysical.format(
-            site=site,
-            date_start=month_start.strftime("%Y-%m-%d"),
-            date_end=month_end.strftime("%Y-%m-%d"),
-            product="categorize",
-        )
-    )
-    resp.raise_for_status()
 
     validity = {}
-    for categorize in resp.json():
-        sources = set(get_file(categorize["uuid"], params).get("sourceFileIds") or [])
+    for categorize in get_files(site, month_start, month_end, "categorize"):
+        sources = set(get_file(categorize["uuid"]).get("sourceFileIds") or [])
         validity[categorize["measurementDate"]] = bool(
             sources & radar_uuids and sources & mwr_uuids
         )
@@ -194,23 +143,12 @@ def get_most_present_pid(
     month_end: pd.Timestamp,
     product_call: str,
     pids: pd.DataFrame,
-    params: ModuleType,
 ) -> str | None:
     """Return the PID that yields the most valid results from the instrument API."""
     pid_counts = Counter()
 
     for pid in pids.values():
-        resp = SESSION.get(
-            params.url_instrument.format(
-                site=site,
-                date_start=month_start.strftime("%Y-%m-%d"),
-                date_end=month_end.strftime("%Y-%m-%d"),
-                product=product_call,
-                pid=pid,
-            )
-        )
-
-        prod_data = resp.json()
+        prod_data = get_files(site, month_start, month_end, product_call, pid=pid)
         if prod_data:
             for d in prod_data:
                 pid_found = d.get("instrument", {}).get("pid")
@@ -228,7 +166,6 @@ def get_pid(
     month_end: pd.Timestamp,
     site: str,
     station: dict,
-    params: ModuleType,
 ) -> str:
     """_summary_
 
@@ -245,8 +182,6 @@ def get_pid(
     site : str
         _description_
     station : dict
-        _description_
-    params : _type_
         _description_
 
     Returns
@@ -266,7 +201,6 @@ def get_pid(
             month_end,
             product_call,
             station["nominal_instrument"][product_request],
-            params,
         )  # TODO: crappy: find better solution
     else:
         pid = station["nominal_instrument"][product_request]
@@ -408,30 +342,23 @@ def cloudnet(  # noqa:C901
                                 month_end,
                                 site,
                                 station,
-                                params,
                             )
 
                             # 3 - Do request
                             # ---------------------------------------
-                            resp = SESSION.get(
-                                params.url_instrument.format(
-                                    site=site,
-                                    date_start=month_start.strftime("%Y-%m-%d"),
-                                    date_end=month_end.strftime("%Y-%m-%d"),
-                                    product=product_call,
-                                    pid=pid,
+                            # no file for any of the PIDs over the month
+                            prod_data = (
+                                get_files(
+                                    site, month_start, month_end, product_call, pid
                                 )
+                                if pid is not None
+                                else []
                             )
                         # if instrument but any reason does not work
                         # ----------------------------------------------------
                         else:  # request as geophysical products -> without pid
-                            resp = SESSION.get(
-                                params.url_geophysical.format(
-                                    site=site,
-                                    date_start=month_start.strftime("%Y-%m-%d"),
-                                    date_end=month_end.strftime("%Y-%m-%d"),
-                                    product=product_call,
-                                )
+                            prod_data = get_files(
+                                site, month_start, month_end, product_call
                             )
 
                         # 4 - Backup instrument (if any) request
@@ -441,43 +368,28 @@ def cloudnet(  # noqa:C901
                             pid_backup = conf.sites[site]["additional_instrument"][
                                 product_request
                             ]
-                            resp_backup = SESSION.get(
-                                params.url_instrument.format(
-                                    site=site,
-                                    date_start=month_start.strftime("%Y-%m-%d"),
-                                    date_end=month_end.strftime("%Y-%m-%d"),
-                                    product=product_call,
-                                    pid=pid_backup,
-                                )
+                            backup_data = get_files(
+                                site, month_start, month_end, product_call, pid_backup
                             )
-                            backup_data = resp_backup.json()
 
                     # ------------------------------------------------------
                     # request geophysical products - without pid
                     # ------------------------------------------------------
                     elif product in params.geophysical_products:
                         product_request = product
-                        resp = SESSION.get(
-                            params.url_geophysical.format(
-                                site=site,
-                                date_start=month_start.strftime("%Y-%m-%d"),
-                                date_end=month_end.strftime("%Y-%m-%d"),
-                                product=product,
-                            )
-                        )
+                        prod_data = get_files(site, month_start, month_end, product)
                     else:
                         print("\t\t\t--> PROBLEM with", product)
                         print("\t\t\t--> Please double check, something WRONG !")
 
                     # --------------------------------------
-                    # Analyze resp json
+                    # Analyze files metadata
                     # --------------------------------------
-                    prod_data = resp.json()
                     if product in L2_PRODUCTS:
                         # computed once per month, shared by all L2 products
                         if categorize_validity is None:
                             categorize_validity = get_categorize_validity(
-                                site, month_start, month_end, station, params
+                                site, month_start, month_end, station
                             )
 
                         for d in prod_data:
@@ -533,7 +445,7 @@ def cloudnet(  # noqa:C901
 
 
 def process_data(  # noqa: D103
-    data: pd.DataFrame,
+    data: list[dict],
     product_name: str,
     perfect_month_dates: int,
     sites: dict,

@@ -8,9 +8,8 @@ not downloaded again.
 from pathlib import Path
 
 import pytest
-import requests
 
-CLOUDNET_API_FILES_URL = "https://cloudnet.fmi.fi/api/files"
+from ccres_labelling_tools.cloudnet import API_URL, SESSION, TIMEOUT
 
 DATES = ["2026-10-30", "2026-10-31"]
 
@@ -28,8 +27,6 @@ INSTRUMENTS = [
     # payerne
     ("payerne", "radar", "https://hdl.handle.net/21.12132/3.37a71c75789f47c3"),
 ]
-
-SESSION = requests.Session()
 
 
 def get_file_from_cloudnet(
@@ -57,14 +54,14 @@ def get_file_from_cloudnet(
 
     """
     response = SESSION.get(
-        CLOUDNET_API_FILES_URL,
+        f"{API_URL}/files",
         params={
             "site": site,
             "date": date,
             "product": product,
             "instrumentPid": instrument_pid,
         },
-        timeout=30,
+        timeout=TIMEOUT,
     )
     response.raise_for_status()
     metadata = response.json()

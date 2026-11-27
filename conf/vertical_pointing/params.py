@@ -13,9 +13,6 @@ BASTA_FILE2 = "{date_file:%Y%m%d}_{station_name}_basta_{pid}.nc"
 MWR_L1C_FILE1 = "{date_file:%Y%m%d}_{station_name}_hatpro-l1c.nc"
 MWR_L1C_FILE2 = "{date_file:%Y%m%d}_{station_name}_hatpro-l1c_{pid}.nc"
 
-# CLOUDNET API URL
-CLOUDNET_API_BASE_URL = "https://cloudnet.fmi.fi/api"
-
 NB_HOURS_PER_DAY = 24
 
 # FOR PLOTTING
