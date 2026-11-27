@@ -1,4 +1,4 @@
-"""Utility functions for coverage analysis and plotting."""
+"""Utility functions for analysis and plotting."""
 
 import re
 from importlib import resources as impresources

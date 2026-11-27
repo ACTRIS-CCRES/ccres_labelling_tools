@@ -25,11 +25,14 @@ classifiers = [
 dependencies = [
   "click>=8.5",
   "matplotlib>=3.11.2",
+  "netcdf4",
   "numpy>=2.5.3",
   "pandas>=3.0.5",
   "requests>=2.34.2",
+  "xarray>=2026.9",
 ]
 scripts.run-get-data-coverage-cloudnet = "ccres_labelling_tools.coverage.cli:main"
+scripts.run-get-instrument-vertical-pointing = "ccres_labelling_tools.vertical_pointing.cli:main"
 
 [dependency-groups]
 dev = [
@@ -90,7 +93,7 @@ ini_options.filterwarnings = [
 ]
 
 [tool.coverage]
-run.source = [ "src/", "tests/" ]
+run.source = [ "src/" ]
 run.omit = [ "*.pyx" ]
 run.branch = true
 run.parallel = true

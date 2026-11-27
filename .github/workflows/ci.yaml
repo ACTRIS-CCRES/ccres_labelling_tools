@@ -102,12 +102,20 @@ jobs:
       - name: Cache python environment
         uses: actions/cache@v5
         with:
-          path: |
-            tests/data/outputs/
-            ${{ matrix.cache-path }}
+          path: ${{ matrix.cache-path }}
           key: ${{ runner.os }}-python-${{ matrix.python }}-pip-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
+      - name: Cache test data downloaded from Cloudnet
+        uses: actions/cache@v5
+        # Files already in tests/data/inputs are not downloaded again by the tests,
+        # so an older cache is still useful: only the missing files are fetched
+        with:
+          path: tests/data/inputs/
+          key: cloudnet-test-data-${{ hashFiles('tests/**/conftest.py') }}
+          restore-keys: |
+            cloudnet-test-data-
 
       - name: Install dependencies
         run: |
@@ -143,10 +151,18 @@ jobs:
         # https://tobiasmcnulty.com/posts/caching-pre-commit/
         # This restore and/or save in the same action
         with:
-          path: |
-            tests/data/outputs/
-            ~/.cache/pip
+          path: ~/.cache/pip
           key: ${{ runner.os }}-python-3.14-pip-${{ hashFiles('pyproject.toml') }}
+
+      - name: Cache test data downloaded from Cloudnet
+        uses: actions/cache@v5
+        # Files already in tests/data/inputs are not downloaded again by the tests,
+        # so an older cache is still useful: only the missing files are fetched
+        with:
+          path: tests/data/inputs/
+          key: cloudnet-test-data-${{ hashFiles('tests/**/conftest.py') }}
+          restore-keys: |
+            cloudnet-test-data-
 
       - name: Install dependencies
         run: |
