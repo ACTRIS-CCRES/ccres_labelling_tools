@@ -10,33 +10,31 @@ import xarray as xr
 
 from ccres_labelling_tools.utils import extract_short_pid
 
+# Reuse the same connection for all the requests to the Cloudnet API
+SESSION = requests.Session()
 
-def get_radar_instrumentID(pid: str, params: ModuleType) -> str:  # noqa: N802
-    """_summary_
+
+def get_instrument_ids(params: ModuleType) -> dict[str, str]:
+    """Return the Cloudnet instrument id (e.g. "mira-35") of each instrument PID.
+
+    All the instruments are fetched in a single request.
 
     Parameters
     ----------
-    pid : str
-        _description_
     params : ModuleType
-        _description_
+        parameters, with the Cloudnet API URL
 
     Returns
     -------
-    str
-        _description_
+    dict[str, str]
+        instrument id for each instrument PID
     """
-    response = requests.get(  # noqa: S113
-        f"{params.CLOUDNET_API_BASE_URL}/files", params={"instrumentPid": pid}
+    response = SESSION.get(
+        f"{params.CLOUDNET_API_BASE_URL}/instrument-pids", timeout=30
     )
     response.raise_for_status()
 
-    files = response.json()
-    return (
-        files[0]["instrument"]["instrumentId"]
-        if files and files[0].get("instrument")
-        else None
-    )
+    return {item["pid"]: item["instrument"]["id"] for item in response.json()}
 
 
 def get_instrument_filename(
@@ -322,6 +320,7 @@ def instruments(  # noqa: C901
     # Loop over sites
     # -------------------------------------
     sites_to_analyzed = define_list_sites(new_sites, conf)
+    instrument_ids = get_instrument_ids(params)
 
     for site in sites_to_analyzed:
         print(site)
@@ -336,6 +335,10 @@ def instruments(  # noqa: C901
 
             # Do monthly analysis per instrument (PID)
             for short_pid, pid in zip(short_pids, pids, strict=False):
+                radar_id = instrument_ids.get(pid, "")
+                if instrument_type == "radar" and not radar_id:
+                    msg = f"Unknown instrument PID on Cloudnet: {pid}"
+                    raise ValueError(msg)
                 months_start = get_month_starts(new_date_start, new_date_end)
                 months_end = get_month_ends(new_date_start, new_date_end)
                 for month_start, month_end in zip(
@@ -353,7 +356,6 @@ def instruments(  # noqa: C901
                         # Get filename
                         # -------------------------------------------------
                         if instrument_type == "radar":
-                            radar_id = get_radar_instrumentID(pid, params)
                             filename = get_instrument_filename(
                                 site,
                                 date,
