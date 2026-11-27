@@ -196,24 +196,6 @@ def get_percentage_vertical_pointing_mwr(
     return hourly_percentage.to_frame(name="percentage_vertical_pointing")
 
 
-def define_list_sites(new_sites: str | None, conf: ModuleType) -> str:
-    """_summary_
-
-    Parameters
-    ----------
-    new_sites : _type_
-        _description_
-    conf : _type_
-        _description_
-
-    Returns
-    -------
-    _type_
-        _description_
-    """
-    return new_sites if new_sites is not None else conf.sites.keys()
-
-
 def get_month_starts(start: pd.Timestamp, end: pd.Timestamp) -> pd.DatetimeIndex:
     """First day of each month between start and end."""
     start = pd.Period(start, freq="M")
@@ -293,10 +275,9 @@ def instruments(  # noqa: C901
     """
     # Loop over sites
     # -------------------------------------
-    sites_to_analyzed = define_list_sites(new_sites, conf)
     instrument_ids = cloudnet.get_instrument_ids()
 
-    for site in sites_to_analyzed:
+    for site in new_sites:
         print(site)
         station = conf.sites[site]  # get conf for a specific site
 

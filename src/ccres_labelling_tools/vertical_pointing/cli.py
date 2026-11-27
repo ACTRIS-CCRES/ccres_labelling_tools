@@ -10,6 +10,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 import click
+import pandas as pd
 
 from ccres_labelling_tools.vertical_pointing import check_vertical_pointing
 
@@ -62,9 +63,10 @@ __author__ = "jean-francois.ribaud@ipsl.fr"
     "--input_dir",
     "-i",
     type=click.Path(
+        exists=True,
         file_okay=False,
         dir_okay=True,
-        writable=True,
+        readable=True,
         path_type=Path,
     ),
     required=True,
@@ -83,8 +85,8 @@ __author__ = "jean-francois.ribaud@ipsl.fr"
     help="output directory",
 )
 def main(
-    site: str,
-    date: dt.datetime,
+    site: tuple[str, ...],
+    date: tuple[dt.datetime, dt.datetime],
     conf_nfs: Path,
     conf_params: Path,
     input_dir: Path,
@@ -101,34 +103,25 @@ def main(
     params = module_from_spec(params_spec)
     params_spec.loader.exec_module(params)
 
-    # 2 - Define input/output directory
+    # 2 - Define output directory
     # --------------------------------------------------
-    input_dir = Path(input_dir)
-    input_dir.mkdir(parents=True, exist_ok=True)
-    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # 3 - get site(s)
     # --------------------------------------------------
-    if site:
-        sites = [s.lower() for s in site]
-        invalid_sites = [s for s in sites if s not in conf.sites]
-        if invalid_sites:
-            for s in invalid_sites:
-                print(f"WARNING: '{s}' SITE DOES NOT BELONG TO CONFIG FILE ! (ignored)")
-        # keep only valid sites
-        sites = [s for s in sites if s in conf.sites]
-    else:
-        sites = None
-        return 0
+    sites = [s.lower() for s in site]
+    invalid_sites = [s for s in sites if s not in conf.sites]
+    for s in invalid_sites:
+        print(f"WARNING: '{s}' SITE DOES NOT BELONG TO CONFIG FILE ! (ignored)")
+    # keep only valid sites
+    sites = [s for s in sites if s in conf.sites]
+    if not sites:
+        msg = f"none of the sites belong to {conf_nfs}"
+        raise click.BadParameter(msg, param_hint="--site")
 
     # 4 - get dates
     # --------------------------------------------------
-    if date:
-        new_date_start, new_date_end = date
-    else:
-        new_date_start, new_date_end = None, None
-        return 0
+    new_date_start, new_date_end = (pd.Timestamp(d) for d in date)
 
     # 5 - main loop
     # --------------------------------------------------
